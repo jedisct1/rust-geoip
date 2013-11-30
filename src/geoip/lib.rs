@@ -119,7 +119,7 @@ impl GeoIP {
         }
     }
 
-    pub fn as_by_ip(&self, ip: IpAddr) -> Option<ASInfo> {
+    pub fn as_info_by_ip(&self, ip: IpAddr) -> Option<ASInfo> {
         let gl = GeoIPLookup::new();
         let cres = match ip {
             Ipv4Addr(a, b, c, d) => {
@@ -187,7 +187,7 @@ fn geoip_test_basic() {
         Ok(geoip) => geoip
     };
     let ip = from_str("91.203.184.192").unwrap();
-    let res = geoip.as_by_ip(ip).unwrap();
+    let res = geoip.as_info_by_ip(ip).unwrap();
     assert!(res.asn == 41064);
     assert!(res.name.contains("Telefun"));
     assert!(res.netmask == 22);
