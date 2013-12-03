@@ -16,7 +16,6 @@
 use std::c_str::CString;
 use std::io::net::ip::{IpAddr,Ipv4Addr,Ipv6Addr};
 use std::libc::{c_void, c_int, c_ulong};
-use std::path::Path;
 
 type GeoIP_ = *c_void;
 type In6Addr = [u8, ..16];
@@ -182,7 +181,7 @@ impl Drop for GeoIP {
 
 #[test]
 fn geoip_test_basic() {
-    let geoip = match GeoIP::open(~Path::new("/opt/geoip/GeoIPASNum.dat"), MemoryCache) {
+    let geoip = match GeoIP::open(~from_str("/opt/geoip/GeoIPASNum.dat").unwrap(), MemoryCache) {
         Err(err) => fail!(err),
         Ok(geoip) => geoip
     };
