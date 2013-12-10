@@ -32,7 +32,7 @@ impl GeoIPLookup {
     }
 }
 
-#[link_args = "-lGeoIP"]
+#[link(name = "GeoIP")]
 extern {
     fn GeoIP_open(dbtype: CString, flags: c_int) -> GeoIP_;
     fn GeoIP_delete(db: GeoIP_);
@@ -181,7 +181,7 @@ impl Drop for GeoIP {
 
 #[test]
 fn geoip_test_basic() {
-    let geoip = match GeoIP::open(~from_str("/opt/geoip/GeoIPASNum.dat").unwrap(), MemoryCache) {
+    let geoip = match GeoIP::open(&from_str("/opt/geoip/GeoIPASNum.dat").unwrap(), MemoryCache) {
         Err(err) => fail!(err),
         Ok(geoip) => geoip
     };
