@@ -15,7 +15,7 @@
 
 use std::c_str::CString;
 use std::io::net::ip::{IpAddr,Ipv4Addr,Ipv6Addr};
-use std::libc::{c_void, c_int, c_ulong};
+use std::libc::{c_void, c_char, c_int, c_ulong};
 
 type GeoIP_ = *c_void;
 type In6Addr = [u8, ..16];
@@ -36,8 +36,8 @@ impl GeoIPLookup {
 extern {
     fn GeoIP_open(dbtype: CString, flags: c_int) -> GeoIP_;
     fn GeoIP_delete(db: GeoIP_);
-    fn GeoIP_name_by_ipnum_gl(db: GeoIP_, ipnum: c_ulong, gl: &GeoIPLookup) -> CString;
-    fn GeoIP_name_by_ipnum_v6_gl(db: GeoIP_, ipnum: In6Addr, gl: &GeoIPLookup) -> CString;
+    fn GeoIP_name_by_ipnum_gl(db: GeoIP_, ipnum: c_ulong, gl: &GeoIPLookup) -> *c_char;
+    fn GeoIP_name_by_ipnum_v6_gl(db: GeoIP_, ipnum: In6Addr, gl: &GeoIPLookup) -> *c_char;
 }
 
 pub enum Options {
@@ -146,7 +146,8 @@ impl GeoIP {
         if cres.is_null() {
             return None;
         }
-        let description = match cres.as_str() {
+        let description_cstr = unsafe { CString::new(cres, true) };
+        let description = match description_cstr.as_str() {
             None => return None,
             Some(description) => description
         };
