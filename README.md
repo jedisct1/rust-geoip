@@ -3,7 +3,7 @@ rust-geoip
 
 [GeoIP](http://www.maxmind.com/en/geolocation_landing) bindings for Rust.
 
-Work in progres. Currently only supports the free
+Work in progress. Currently only supports the free
 [ASN database](http://dev.maxmind.com/geoip/legacy/geolite/#Autonomous_System_Numbers).
 
 Installation:
