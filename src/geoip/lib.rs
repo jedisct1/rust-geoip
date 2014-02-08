@@ -34,7 +34,7 @@ impl GeoIPLookup {
 
 #[link(name = "GeoIP")]
 extern {
-    fn GeoIP_open(dbtype: CString, flags: c_int) -> GeoIP_;
+    fn GeoIP_open(dbtype: *c_char, flags: c_int) -> GeoIP_;
     fn GeoIP_delete(db: GeoIP_);
     fn GeoIP_name_by_ipnum_gl(db: GeoIP_, ipnum: c_ulong, gl: &GeoIPLookup) -> *c_char;
     fn GeoIP_name_by_ipnum_v6_gl(db: GeoIP_, ipnum: In6Addr, gl: &GeoIPLookup) -> *c_char;
@@ -108,7 +108,7 @@ impl GeoIP {
             Some(file) => file
         };
         let db = unsafe {
-            GeoIP_open(file.to_c_str(), options as c_int)
+            GeoIP_open(file.to_c_str().unwrap(), options as c_int)
         };
         match db.is_null() {
             true => Err(format!("Can't open {}", file)),
