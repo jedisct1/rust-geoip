@@ -14,6 +14,7 @@
        managed_heap_memory)];
 
 use std::c_str::CString;
+use std::fmt;
 use std::io::net::ip::{IpAddr,Ipv4Addr,Ipv6Addr};
 use std::libc::{c_void, c_char, c_int, c_ulong};
 
@@ -95,9 +96,9 @@ pub struct ASInfo {
     netmask: uint
 }
 
-impl ToStr for ASInfo {
-    fn to_str(&self) -> ~str {
-        format!("{}\t{}", self.asn, self.name)
+impl fmt::Show for ASInfo {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f.buf, "{}\t{}", self.asn, self.name)
     }
 }
 
