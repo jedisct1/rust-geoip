@@ -87,7 +87,7 @@ pub enum DBType {
 }
 
 pub struct GeoIP {
-    priv db: GeoIP_
+    db: GeoIP_
 }
 
 pub struct ASInfo {
