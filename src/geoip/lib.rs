@@ -3,15 +3,15 @@
 /*!
  * Bindings for the GeoIP library
  */
-#[desc = "Bindings for the GeoIP library."];
-#[license = "BSD"];
-#[crate_id = "geoip#0.1"];
-#[crate_type = "rlib"];
+#![desc = "Bindings for the GeoIP library."]
+#![license = "BSD"]
+#![crate_id = "geoip#0.1"]
+#![crate_type = "rlib"]
 
-#[warn(non_camel_case_types,
-       non_uppercase_statics,
-       unnecessary_qualification,
-       managed_heap_memory)];
+#![warn(non_camel_case_types,
+        non_uppercase_statics,
+        unnecessary_qualification,
+        managed_heap_memory)]
 
 use std::c_str::CString;
 use std::fmt;
