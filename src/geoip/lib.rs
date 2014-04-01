@@ -91,9 +91,9 @@ pub struct GeoIP {
 }
 
 pub struct ASInfo {
-    asn: uint,
-    name: ~str,
-    netmask: uint
+    pub asn: uint,
+    pub name: ~str,
+    pub netmask: uint
 }
 
 impl fmt::Show for ASInfo {
