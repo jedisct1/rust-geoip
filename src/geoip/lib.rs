@@ -13,10 +13,12 @@
         unnecessary_qualification,
         managed_heap_memory)]
 
+extern crate libc;
+
+use libc::{c_void, c_char, c_int, c_ulong};
 use std::c_str::CString;
 use std::fmt;
 use std::io::net::ip::{IpAddr,Ipv4Addr,Ipv6Addr};
-use std::libc::{c_void, c_char, c_int, c_ulong};
 
 type GeoIP_ = *c_void;
 type In6Addr = [u8, ..16];
