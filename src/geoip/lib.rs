@@ -94,7 +94,7 @@ pub struct GeoIP {
 
 pub struct ASInfo {
     pub asn: uint,
-    pub name: ~str,
+    pub name: StrBuf,
     pub netmask: uint
 }
 
@@ -105,7 +105,7 @@ impl fmt::Show for ASInfo {
 }
 
 impl GeoIP {
-    pub fn open(path: &Path, options: Options) -> Result<GeoIP, ~str> {
+    pub fn open(path: &Path, options: Options) -> Result<GeoIP, StrBuf> {
         let file = match path.as_str() {
             None => return Err(format!("Invalid path {}", path.display())),
             Some(file) => file
@@ -192,6 +192,6 @@ fn geoip_test_basic() {
     let ip = from_str("91.203.184.192").unwrap();
     let res = geoip.as_info_by_ip(ip).unwrap();
     assert!(res.asn == 41064);
-    assert!(res.name.contains("Telefun"));
+    assert!(res.name.as_slice().contains("Telefun"));
     assert!(res.netmask == 22);
 }
