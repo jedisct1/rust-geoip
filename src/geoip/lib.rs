@@ -94,7 +94,7 @@ pub struct GeoIP {
 
 pub struct ASInfo {
     pub asn: uint,
-    pub name: StrBuf,
+    pub name: String,
     pub netmask: uint
 }
 
@@ -105,7 +105,7 @@ impl fmt::Show for ASInfo {
 }
 
 impl GeoIP {
-    pub fn open(path: &Path, options: Options) -> Result<GeoIP, StrBuf> {
+    pub fn open(path: &Path, options: Options) -> Result<GeoIP, String> {
         let file = match path.as_str() {
             None => return Err(format!("Invalid path {}", path.display())),
             Some(file) => file
