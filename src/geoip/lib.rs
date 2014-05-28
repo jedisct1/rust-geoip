@@ -168,7 +168,7 @@ impl GeoIP {
         let name = di.next().unwrap_or("(none)");
         let asinfo = ASInfo {
             asn: asn,
-            name: name.to_owned(),
+            name: name.to_string(),
             netmask: gl.netmask as uint
         };
         Some(asinfo)
