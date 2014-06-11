@@ -118,19 +118,19 @@ pub struct ASInfo {
 }
 
 pub struct CityInfo {
-    country_code: Option<String>,
-    country_code3: Option<String>,
-    country_name: Option<String>,
-    region: Option<String>,
-    city: Option<String>,
-    postal_code: Option<String>,
-    latitude: f32,
-    longitude: f32,
-    dma_code: uint,
-    area_code: uint,
-    charset: uint,
-    continent_code: Option<String>,
-    netmask: uint
+    pub country_code: Option<String>,
+    pub country_code3: Option<String>,
+    pub country_name: Option<String>,
+    pub region: Option<String>,
+    pub city: Option<String>,
+    pub postal_code: Option<String>,
+    pub latitude: f32,
+    pub longitude: f32,
+    pub dma_code: uint,
+    pub area_code: uint,
+    pub charset: uint,
+    pub continent_code: Option<String>,
+    pub netmask: uint
 }
 
 impl CityInfo {
