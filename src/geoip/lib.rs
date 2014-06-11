@@ -1,4 +1,4 @@
-// (C)opyleft 2013 Frank Denis
+// (C)opyleft 2013,2014 Frank Denis
 
 /*!
  * Bindings for the GeoIP library
@@ -44,6 +44,11 @@ extern {
     fn GeoIP_record_by_ipnum(db: GeoIP_, ipnum: c_ulong) -> *GeoIPRecord_;
     fn GeoIP_record_by_ipnum_v6(db: GeoIP_, ipnum: In6Addr) -> *GeoIPRecord_;
     fn GeoIPRecord_delete(gir: *GeoIPRecord_);
+    fn GeoIP_set_charset(db: GeoIP_, charset: c_int) -> c_int;
+}
+
+enum Charset {
+    UTF8 = 1
 }
 
 pub enum Options {
@@ -210,12 +215,13 @@ impl GeoIP {
         let db = unsafe {
             GeoIP_open(file.to_c_str().unwrap(), options as c_int)
         };
-        match db.is_null() {
-            true => Err(format!("Can't open {}", file)),
-            false => Ok(GeoIP {
-                db: db
-            })
+        if db.is_null() {
+            return Err(format!("Can't open {}", file));
         }
+        if unsafe { GeoIP_set_charset(db, UTF8 as c_int) } != 0 {
+            return Err("Can't set charset to UTF8".to_string());
+        }
+        Ok(GeoIP { db: db })
     }
 
     pub fn city_info_by_ip(&self, ip: IpAddr) -> Option<CityInfo> {
