@@ -15,7 +15,7 @@
 
 extern crate libc;
 
-use libc::{c_void, c_char, c_int, c_ulong};
+use libc::{c_void, c_char, c_int, c_ulong, c_float};
 use std::c_str::CString;
 use std::fmt;
 use std::io::net::ip::{IpAddr,Ipv4Addr,Ipv6Addr};
@@ -23,13 +23,13 @@ use std::io::net::ip::{IpAddr,Ipv4Addr,Ipv6Addr};
 type GeoIP_ = *c_void;
 type In6Addr = [u8, ..16];
 
-struct GeoIPLookup {
+struct GeoIPLookup_ {
     netmask: c_int
 }
 
-impl GeoIPLookup {
-    fn new() -> GeoIPLookup {
-        GeoIPLookup {
+impl GeoIPLookup_ {
+    fn new() -> GeoIPLookup_ {
+        GeoIPLookup_ {
             netmask: 0
         }
     }
@@ -39,8 +39,11 @@ impl GeoIPLookup {
 extern {
     fn GeoIP_open(dbtype: *c_char, flags: c_int) -> GeoIP_;
     fn GeoIP_delete(db: GeoIP_);
-    fn GeoIP_name_by_ipnum_gl(db: GeoIP_, ipnum: c_ulong, gl: &GeoIPLookup) -> *c_char;
-    fn GeoIP_name_by_ipnum_v6_gl(db: GeoIP_, ipnum: In6Addr, gl: &GeoIPLookup) -> *c_char;
+    fn GeoIP_name_by_ipnum_gl(db: GeoIP_, ipnum: c_ulong, gl: &GeoIPLookup_) -> *c_char;
+    fn GeoIP_name_by_ipnum_v6_gl(db: GeoIP_, ipnum: In6Addr, gl: &GeoIPLookup_) -> *c_char;
+    fn GeoIP_record_by_ipnum(db: GeoIP_, ipnum: c_ulong) -> *GeoIPRecord_;
+    fn GeoIP_record_by_ipnum_v6(db: GeoIP_, ipnum: In6Addr) -> *GeoIPRecord_;
+    fn GeoIPRecord_delete(gir: *GeoIPRecord_);
 }
 
 pub enum Options {
@@ -92,10 +95,97 @@ pub struct GeoIP {
     db: GeoIP_
 }
 
+pub struct GeoIPRecord_ {
+    country_code: *c_char,
+    country_code3: *c_char,
+    country_name: *c_char,
+    region: *c_char,
+    city: *c_char,
+    postal_code: *c_char,
+    latitude: c_float,
+    longitude: c_float,
+    dma_code: c_int,
+    area_code: c_int,
+    charset: c_int,
+    continent_code: *c_char,
+    netmask: c_int
+}
+
 pub struct ASInfo {
     pub asn: uint,
     pub name: String,
     pub netmask: uint
+}
+
+pub struct CityInfo {
+    country_code: Option<String>,
+    country_code3: Option<String>,
+    country_name: Option<String>,
+    region: Option<String>,
+    city: Option<String>,
+    postal_code: Option<String>,
+    latitude: f32,
+    longitude: f32,
+    dma_code: uint,
+    area_code: uint,
+    charset: uint,
+    continent_code: Option<String>,
+    netmask: uint
+}
+
+impl CityInfo {
+    fn from_geoiprecord(res: &GeoIPRecord_) -> CityInfo {
+        let country_code = unsafe { if res.country_code.is_null() {
+            None
+        } else {
+            Some(String::from_str(CString::new(res.country_code, false).as_str().unwrap()))
+        }};
+        let country_code3 = unsafe { if res.country_code3.is_null() {
+            None
+        } else {
+            Some(String::from_str(CString::new(res.country_code3, false).as_str().unwrap()))
+        }};
+        let country_name = unsafe { if res.country_name.is_null() {
+            None
+        } else {
+            Some(String::from_str(CString::new(res.country_name, false).as_str().unwrap()))
+        }};
+        let region = unsafe { if res.region.is_null() {
+            None
+        } else {
+            Some(String::from_str(CString::new(res.region, false).as_str().unwrap()))
+        }};
+        let city = unsafe { if res.city.is_null() {
+            None
+        } else {
+            Some(String::from_str(CString::new(res.city, false).as_str().unwrap()))
+        }};
+        let postal_code = unsafe { if res.postal_code.is_null() {
+            None
+        } else {
+            Some(String::from_str(CString::new(res.postal_code, false).as_str().unwrap()))
+        }};
+        let continent_code = unsafe { if res.continent_code.is_null() {
+            None
+        } else {
+            Some(String::from_str(CString::new(res.continent_code, false).as_str().unwrap()))
+        }};
+        CityInfo {
+            country_code: country_code,
+            country_code3: country_code3,
+            country_name: country_name,
+            region: region,
+            city: city,
+            postal_code: postal_code,
+            latitude: res.latitude as f32,
+            longitude: res.longitude as f32,
+            dma_code: res.dma_code as uint,
+            area_code: res.area_code as uint,
+            charset: res.charset as uint,
+            continent_code: continent_code,
+            netmask: res.netmask as uint
+        }
+    }
 }
 
 impl fmt::Show for ASInfo {
@@ -116,13 +206,46 @@ impl GeoIP {
         match db.is_null() {
             true => Err(format!("Can't open {}", file)),
             false => Ok(GeoIP {
-                    db: db
-                })
+                db: db
+            })
         }
     }
 
+    pub fn city_info_by_ip(&self, ip: IpAddr) -> Option<CityInfo> {
+        let cres = match ip {
+            Ipv4Addr(a, b, c, d) => {
+                let ipnum: c_ulong =
+                    (a as c_ulong << 24) | (b as c_ulong << 16) |
+                    (c as c_ulong << 8)  | (d as c_ulong);
+                unsafe {
+                    GeoIP_record_by_ipnum(self.db, ipnum)
+                }
+            },
+            Ipv6Addr(a, b, c, d, e, f, g, h) => {
+                let in6_addr: In6Addr = [(a >> 8) as u8, a as u8,
+                                         (b >> 8) as u8, b as u8,
+                                         (c >> 8) as u8, c as u8,
+                                         (d >> 8) as u8, d as u8,
+                                         (e >> 8) as u8, e as u8,
+                                         (f >> 8) as u8, f as u8,
+                                         (g >> 8) as u8, g as u8,
+                                         (h >> 8) as u8, h as u8];
+                unsafe {
+                    GeoIP_record_by_ipnum_v6(self.db, in6_addr)
+                }
+            }
+        };
+        if cres.is_null() {
+            return None;
+        }
+        let city_info = CityInfo::from_geoiprecord(&unsafe { *cres });
+        unsafe { GeoIPRecord_delete(cres) };
+        unsafe { std::mem::forget(cres) };
+        Some(city_info)
+    }
+
     pub fn as_info_by_ip(&self, ip: IpAddr) -> Option<ASInfo> {
-        let gl = GeoIPLookup::new();
+        let gl = GeoIPLookup_::new();
         let cres = match ip {
             Ipv4Addr(a, b, c, d) => {
                 let ipnum: c_ulong =
@@ -166,12 +289,12 @@ impl GeoIP {
             }
         };
         let name = di.next().unwrap_or("(none)");
-        let asinfo = ASInfo {
+        let as_info = ASInfo {
             asn: asn,
             name: name.to_string(),
             netmask: gl.netmask as uint
         };
-        Some(asinfo)
+        Some(as_info)
     }
 }
 
@@ -194,4 +317,15 @@ fn geoip_test_basic() {
     assert!(res.asn == 41064);
     assert!(res.name.as_slice().contains("Telefun"));
     assert!(res.netmask == 22);
+}
+
+#[test]
+fn geoip_test_city() {
+    let geoip = match GeoIP::open(&from_str("/opt/geoip/GeoLiteCity.dat").unwrap(), MemoryCache) {
+        Err(err) => fail!(err),
+        Ok(geoip) => geoip
+    };
+    let ip = from_str("8.8.8.8").unwrap();
+    let res = geoip.city_info_by_ip(ip).unwrap();
+    assert!(res.city.unwrap().as_slice() == "Mountain View");
 }
