@@ -138,37 +138,44 @@ impl CityInfo {
         let country_code = unsafe { if res.country_code.is_null() {
             None
         } else {
-            Some(String::from_str(CString::new(res.country_code, false).as_str().unwrap()))
+            CString::new(res.country_code, false).as_str().
+                and_then(|str| Some(String::from_str(str)))
         }};
         let country_code3 = unsafe { if res.country_code3.is_null() {
             None
         } else {
-            Some(String::from_str(CString::new(res.country_code3, false).as_str().unwrap()))
+            CString::new(res.country_code3, false).as_str().
+                and_then(|str| Some(String::from_str(str)))
         }};
         let country_name = unsafe { if res.country_name.is_null() {
             None
         } else {
-            Some(String::from_str(CString::new(res.country_name, false).as_str().unwrap()))
+            CString::new(res.country_name, false).as_str().
+                and_then(|str| Some(String::from_str(str)))
         }};
         let region = unsafe { if res.region.is_null() {
             None
         } else {
-            Some(String::from_str(CString::new(res.region, false).as_str().unwrap()))
+            CString::new(res.region, false).as_str().
+                and_then(|str| Some(String::from_str(str)))
         }};
         let city = unsafe { if res.city.is_null() {
             None
         } else {
-            Some(String::from_str(CString::new(res.city, false).as_str().unwrap()))
+            CString::new(res.city, false).as_str().
+                and_then(|str| Some(String::from_str(str)))
         }};
         let postal_code = unsafe { if res.postal_code.is_null() {
             None
         } else {
-            Some(String::from_str(CString::new(res.postal_code, false).as_str().unwrap()))
+            CString::new(res.postal_code, false).as_str().
+                and_then(|str| Some(String::from_str(str)))
         }};
         let continent_code = unsafe { if res.continent_code.is_null() {
             None
         } else {
-            Some(String::from_str(CString::new(res.continent_code, false).as_str().unwrap()))
+            CString::new(res.continent_code, false).as_str().
+                and_then(|str| Some(String::from_str(str)))
         }};
         CityInfo {
             country_code: country_code,
