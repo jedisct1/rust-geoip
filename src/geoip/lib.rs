@@ -20,7 +20,7 @@ use std::c_str::CString;
 use std::fmt;
 use std::io::net::ip::{IpAddr,Ipv4Addr,Ipv6Addr};
 
-type GeoIP_ = *c_void;
+type GeoIP_ = *const c_void;
 type In6Addr = [u8, ..16];
 
 struct GeoIPLookup_ {
@@ -37,13 +37,13 @@ impl GeoIPLookup_ {
 
 #[link(name = "GeoIP")]
 extern {
-    fn GeoIP_open(dbtype: *c_char, flags: c_int) -> GeoIP_;
+    fn GeoIP_open(dbtype: *const c_char, flags: c_int) -> GeoIP_;
     fn GeoIP_delete(db: GeoIP_);
-    fn GeoIP_name_by_ipnum_gl(db: GeoIP_, ipnum: c_ulong, gl: &GeoIPLookup_) -> *c_char;
-    fn GeoIP_name_by_ipnum_v6_gl(db: GeoIP_, ipnum: In6Addr, gl: &GeoIPLookup_) -> *c_char;
-    fn GeoIP_record_by_ipnum(db: GeoIP_, ipnum: c_ulong) -> *GeoIPRecord_;
-    fn GeoIP_record_by_ipnum_v6(db: GeoIP_, ipnum: In6Addr) -> *GeoIPRecord_;
-    fn GeoIPRecord_delete(gir: *GeoIPRecord_);
+    fn GeoIP_name_by_ipnum_gl(db: GeoIP_, ipnum: c_ulong, gl: &GeoIPLookup_) -> *const c_char;
+    fn GeoIP_name_by_ipnum_v6_gl(db: GeoIP_, ipnum: In6Addr, gl: &GeoIPLookup_) -> *const c_char;
+    fn GeoIP_record_by_ipnum(db: GeoIP_, ipnum: c_ulong) -> *const GeoIPRecord_;
+    fn GeoIP_record_by_ipnum_v6(db: GeoIP_, ipnum: In6Addr) -> *const GeoIPRecord_;
+    fn GeoIPRecord_delete(gir: *const GeoIPRecord_);
     fn GeoIP_set_charset(db: GeoIP_, charset: c_int) -> c_int;
 }
 
@@ -101,18 +101,18 @@ pub struct GeoIP {
 }
 
 pub struct GeoIPRecord_ {
-    country_code: *c_char,
-    country_code3: *c_char,
-    country_name: *c_char,
-    region: *c_char,
-    city: *c_char,
-    postal_code: *c_char,
+    country_code: *const c_char,
+    country_code3: *const c_char,
+    country_name: *const c_char,
+    region: *const c_char,
+    city: *const c_char,
+    postal_code: *const c_char,
     latitude: c_float,
     longitude: c_float,
     dma_code: c_int,
     area_code: c_int,
     charset: c_int,
-    continent_code: *c_char,
+    continent_code: *const c_char,
     netmask: c_int
 }
 
