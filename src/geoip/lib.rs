@@ -5,7 +5,7 @@
  */
 #![desc = "Bindings for the GeoIP library."]
 #![license = "BSD"]
-#![crate_id = "geoip#0.1"]
+#![crate_name = "geoip"]
 #![crate_type = "rlib"]
 
 #![warn(non_camel_case_types,
