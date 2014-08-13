@@ -1,0 +1,10 @@
+[project]
+
+name = "rust-geoip"
+version = "0.0.1"
+authors = ["Frank Denis <github@pureftpd.org>"]
+
+[[lib]]
+
+name = "geoip"
+path = "src/geoip/lib.rs"
