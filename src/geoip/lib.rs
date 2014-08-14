@@ -290,7 +290,7 @@ impl GeoIP {
             None => return None,
             Some(description) => description
         };
-        let mut di = description.splitn(' ', 1);
+        let mut di = description.splitn(1, ' ');
         let asn = match di.next() {
             None => return None,
             Some(asn) => {
