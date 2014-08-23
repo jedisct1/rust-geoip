@@ -100,6 +100,7 @@ pub struct GeoIP {
     db: GeoIP_
 }
 
+#[repr(C)]
 pub struct GeoIPRecord_ {
     country_code: *const c_char,
     country_code3: *const c_char,
