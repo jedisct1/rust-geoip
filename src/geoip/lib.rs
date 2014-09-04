@@ -23,6 +23,7 @@ use std::io::net::ip::{IpAddr,Ipv4Addr,Ipv6Addr};
 type GeoIP_ = *const c_void;
 type In6Addr = [u8, ..16];
 
+#[repr(C)]
 struct GeoIPLookup_ {
     netmask: c_int
 }
