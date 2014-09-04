@@ -1,0 +1,7 @@
+language: rust
+
+script: make
+
+before_script:
+ - sudo apt-get install libgeoip-dev
+ 
