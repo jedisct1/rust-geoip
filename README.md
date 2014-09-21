@@ -6,7 +6,7 @@ rust-geoip
 Work in progress. Currently only supports the free
 [ASN database](http://dev.maxmind.com/geoip/legacy/geolite/#Autonomous_System_Numbers).
 
-Installation: use [Cargo](crates.io).
+Installation: use [Cargo](http://crates.io).
 
 Usage:
 
