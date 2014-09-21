@@ -6,11 +6,7 @@ rust-geoip
 Work in progress. Currently only supports the free
 [ASN database](http://dev.maxmind.com/geoip/legacy/geolite/#Autonomous_System_Numbers).
 
-Installation:
-
-```bash
-rustpkg -O install geoip
-```
+Installation: use [Cargo](crates.io).
 
 Usage:
 
