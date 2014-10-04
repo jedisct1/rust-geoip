@@ -10,8 +10,7 @@
 
 #![warn(non_camel_case_types,
         non_uppercase_statics,
-        unnecessary_qualification,
-        managed_heap_memory)]
+        unnecessary_qualification)]
 
 extern crate libc;
 
