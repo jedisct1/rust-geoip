@@ -323,7 +323,7 @@ impl Drop for GeoIP {
 #[test]
 fn geoip_test_basic() {
     let geoip = match GeoIP::open(&from_str("/opt/geoip/GeoIPASNum.dat").unwrap(), MemoryCache) {
-        Err(err) => fail!(err),
+        Err(err) => panic!(err),
         Ok(geoip) => geoip
     };
     let ip = from_str("91.203.184.192").unwrap();
@@ -336,7 +336,7 @@ fn geoip_test_basic() {
 #[test]
 fn geoip_test_city() {
     let geoip = match GeoIP::open(&from_str("/opt/geoip/GeoLiteCity.dat").unwrap(), MemoryCache) {
-        Err(err) => fail!(err),
+        Err(err) => panic!(err),
         Ok(geoip) => geoip
     };
     let ip = from_str("8.8.8.8").unwrap();
