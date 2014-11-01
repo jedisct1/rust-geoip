@@ -9,8 +9,8 @@
 #![crate_type = "rlib"]
 
 #![warn(non_camel_case_types,
-        non_uppercase_statics,
-        unnecessary_qualification)]
+        non_upper_case_globals,
+        unused_qualifications)]
 
 extern crate libc;
 
