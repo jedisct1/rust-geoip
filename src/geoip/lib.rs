@@ -13,6 +13,7 @@
         unused_qualifications)]
 
 extern crate libc;
+extern crate serialize;
 
 use libc::{c_void, c_char, c_int, c_ulong, c_float};
 use std::c_str::CString;
@@ -117,12 +118,14 @@ pub struct GeoIPRecord_ {
     netmask: c_int
 }
 
+#[deriving(Decodable, Encodable)]
 pub struct ASInfo {
     pub asn: uint,
     pub name: String,
     pub netmask: uint
 }
 
+#[deriving(Decodable, Encodable)]
 pub struct CityInfo {
     pub country_code: Option<String>,
     pub country_code3: Option<String>,
