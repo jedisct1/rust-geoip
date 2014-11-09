@@ -24,13 +24,13 @@ type RawGeoIp = *const c_void;
 type In6Addr = [u8, ..16];
 
 #[repr(C)]
-struct GeoIPLookup_ {
+struct GeoIpLookup {
     netmask: c_int
 }
 
-impl GeoIPLookup_ {
-    fn new() -> GeoIPLookup_ {
-        GeoIPLookup_ {
+impl GeoIpLookup {
+    fn new() -> GeoIpLookup {
+        GeoIpLookup {
             netmask: 0
         }
     }
@@ -40,8 +40,8 @@ impl GeoIPLookup_ {
 extern {
     fn GeoIP_open(dbtype: *const c_char, flags: c_int) -> RawGeoIp;
     fn GeoIP_delete(db: RawGeoIp);
-    fn GeoIP_name_by_ipnum_gl(db: RawGeoIp, ipnum: c_ulong, gl: &GeoIPLookup_) -> *const c_char;
-    fn GeoIP_name_by_ipnum_v6_gl(db: RawGeoIp, ipnum: In6Addr, gl: &GeoIPLookup_) -> *const c_char;
+    fn GeoIP_name_by_ipnum_gl(db: RawGeoIp, ipnum: c_ulong, gl: &GeoIpLookup) -> *const c_char;
+    fn GeoIP_name_by_ipnum_v6_gl(db: RawGeoIp, ipnum: In6Addr, gl: &GeoIpLookup) -> *const c_char;
     fn GeoIP_record_by_ipnum(db: RawGeoIp, ipnum: c_ulong) -> *const GeoIPRecord_;
     fn GeoIP_record_by_ipnum_v6(db: RawGeoIp, ipnum: In6Addr) -> *const GeoIPRecord_;
     fn GeoIPRecord_delete(gir: *const GeoIPRecord_);
@@ -228,7 +228,7 @@ impl GeoIP {
     }
 
     pub fn as_info_by_ip(&self, ip: IpAddr) -> Option<ASInfo> {
-        let gl = GeoIPLookup_::new();
+        let gl = GeoIpLookup::new();
         let cres = match ip {
             Ipv4Addr(a, b, c, d) => {
                 let ipnum: c_ulong =
