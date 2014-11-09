@@ -142,63 +142,27 @@ pub struct CityInfo {
     pub netmask: uint
 }
 
+unsafe fn maybe_string(c_str: *const c_char) -> Option<String> {
+    c_str.as_ref().and_then(|opt| {
+        CString::new(opt, false).as_str().map(|s| s.to_string())
+    })
+}
+
 impl CityInfo {
-    fn from_geoiprecord(res: &GeoIPRecord_) -> CityInfo {
-        let country_code = unsafe { if res.country_code.is_null() {
-            None
-        } else {
-            CString::new(res.country_code, false).as_str().
-                and_then(|str| Some(String::from_str(str)))
-        }};
-        let country_code3 = unsafe { if res.country_code3.is_null() {
-            None
-        } else {
-            CString::new(res.country_code3, false).as_str().
-                and_then(|str| Some(String::from_str(str)))
-        }};
-        let country_name = unsafe { if res.country_name.is_null() {
-            None
-        } else {
-            CString::new(res.country_name, false).as_str().
-                and_then(|str| Some(String::from_str(str)))
-        }};
-        let region = unsafe { if res.region.is_null() {
-            None
-        } else {
-            CString::new(res.region, false).as_str().
-                and_then(|str| Some(String::from_str(str)))
-        }};
-        let city = unsafe { if res.city.is_null() {
-            None
-        } else {
-            CString::new(res.city, false).as_str().
-                and_then(|str| Some(String::from_str(str)))
-        }};
-        let postal_code = unsafe { if res.postal_code.is_null() {
-            None
-        } else {
-            CString::new(res.postal_code, false).as_str().
-                and_then(|str| Some(String::from_str(str)))
-        }};
-        let continent_code = unsafe { if res.continent_code.is_null() {
-            None
-        } else {
-            CString::new(res.continent_code, false).as_str().
-                and_then(|str| Some(String::from_str(str)))
-        }};
+    unsafe fn from_geoiprecord(res: &GeoIPRecord_) -> CityInfo {
         CityInfo {
-            country_code: country_code,
-            country_code3: country_code3,
-            country_name: country_name,
-            region: region,
-            city: city,
-            postal_code: postal_code,
+            country_code: maybe_string(res.country_code),
+            country_code3: maybe_string(res.country_code3),
+            country_name: maybe_string(res.country_name),
+            region: maybe_string(res.region),
+            city: maybe_string(res.city),
+            postal_code: maybe_string(res.postal_code),
             latitude: res.latitude as f32,
             longitude: res.longitude as f32,
             dma_code: res.dma_code as uint,
             area_code: res.area_code as uint,
             charset: res.charset as uint,
-            continent_code: continent_code,
+            continent_code: maybe_string(res.continent_code),
             netmask: res.netmask as uint
         }
     }
@@ -252,13 +216,15 @@ impl GeoIP {
                 }
             }
         };
-        if cres.is_null() {
-            return None;
+
+        if cres.is_null() { return None; }
+
+        unsafe {
+            let city_info = CityInfo::from_geoiprecord(&*cres);
+            GeoIPRecord_delete(cres);
+            std::mem::forget(cres);
+            Some(city_info)
         }
-        let city_info = CityInfo::from_geoiprecord(&unsafe { *cres });
-        unsafe { GeoIPRecord_delete(cres) };
-        unsafe { std::mem::forget(cres) };
-        Some(city_info)
     }
 
     pub fn as_info_by_ip(&self, ip: IpAddr) -> Option<ASInfo> {
