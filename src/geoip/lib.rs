@@ -40,8 +40,8 @@ impl GeoIpLookup {
 extern {
     fn GeoIP_open(dbtype: *const c_char, flags: c_int) -> RawGeoIp;
     fn GeoIP_delete(db: RawGeoIp);
-    fn GeoIP_name_by_ipnum_gl(db: RawGeoIp, ipnum: c_ulong, gl: &GeoIpLookup) -> *const c_char;
-    fn GeoIP_name_by_ipnum_v6_gl(db: RawGeoIp, ipnum: In6Addr, gl: &GeoIpLookup) -> *const c_char;
+    fn GeoIP_name_by_ipnum_gl(db: RawGeoIp, ipnum: c_ulong, gl: *mut GeoIpLookup) -> *const c_char;
+    fn GeoIP_name_by_ipnum_v6_gl(db: RawGeoIp, ipnum: In6Addr, gl: *mut GeoIpLookup) -> *const c_char;
     fn GeoIP_record_by_ipnum(db: RawGeoIp, ipnum: c_ulong) -> *const GeoIpRecord;
     fn GeoIP_record_by_ipnum_v6(db: RawGeoIp, ipnum: In6Addr) -> *const GeoIpRecord;
     fn GeoIPRecord_delete(gir: *const GeoIpRecord);
@@ -235,10 +235,10 @@ impl GeoIp {
     }
 
     pub fn as_info_by_ip(&self, ip: IpAddr) -> Option<ASInfo> {
-        let gl = GeoIpLookup::new();
+        let mut gl = GeoIpLookup::new();
         let cres = match CNetworkIp::new(ip) {
-            V4(ip) => unsafe { GeoIP_name_by_ipnum_gl(self.db, ip, &gl) },
-            V6(ip) => unsafe { GeoIP_name_by_ipnum_v6_gl(self.db, ip, &gl) }
+            V4(ip) => unsafe { GeoIP_name_by_ipnum_gl(self.db, ip, &mut gl) },
+            V6(ip) => unsafe { GeoIP_name_by_ipnum_v6_gl(self.db, ip, &mut gl) }
         };
 
         if cres.is_null() {
