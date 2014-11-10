@@ -97,7 +97,7 @@ pub enum DBType {
     AccuracyRadiusEditionV6 = 38
 }
 
-pub struct GeoIP {
+pub struct GeoIp {
     db: RawGeoIp
 }
 
@@ -174,8 +174,8 @@ impl fmt::Show for ASInfo {
     }
 }
 
-impl GeoIP {
-    pub fn open(path: &Path, options: Options) -> Result<GeoIP, String> {
+impl GeoIp {
+    pub fn open(path: &Path, options: Options) -> Result<GeoIp, String> {
         let file = match path.as_str() {
             None => return Err(format!("Invalid path {}", path.display())),
             Some(file) => file
@@ -189,7 +189,7 @@ impl GeoIP {
         if unsafe { GeoIP_set_charset(db, UTF8 as c_int) } != 0 {
             return Err("Can't set charset to UTF8".to_string());
         }
-        Ok(GeoIP { db: db })
+        Ok(GeoIp { db: db })
     }
 
     pub fn city_info_by_ip(&self, ip: IpAddr) -> Option<CityInfo> {
@@ -281,7 +281,7 @@ impl GeoIP {
     }
 }
 
-impl Drop for GeoIP {
+impl Drop for GeoIp {
     fn drop(&mut self) {
         unsafe {
             GeoIP_delete(self.db);
@@ -291,7 +291,7 @@ impl Drop for GeoIP {
 
 #[test]
 fn geoip_test_basic() {
-    let geoip = match GeoIP::open(&from_str("/opt/geoip/GeoIPASNum.dat").unwrap(), MemoryCache) {
+    let geoip = match GeoIp::open(&from_str("/opt/geoip/GeoIPASNum.dat").unwrap(), MemoryCache) {
         Err(err) => panic!(err),
         Ok(geoip) => geoip
     };
@@ -304,7 +304,7 @@ fn geoip_test_basic() {
 
 #[test]
 fn geoip_test_city() {
-    let geoip = match GeoIP::open(&from_str("/opt/geoip/GeoLiteCity.dat").unwrap(), MemoryCache) {
+    let geoip = match GeoIp::open(&from_str("/opt/geoip/GeoLiteCity.dat").unwrap(), MemoryCache) {
         Err(err) => panic!(err),
         Ok(geoip) => geoip
     };
