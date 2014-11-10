@@ -42,9 +42,9 @@ extern {
     fn GeoIP_delete(db: RawGeoIp);
     fn GeoIP_name_by_ipnum_gl(db: RawGeoIp, ipnum: c_ulong, gl: &GeoIpLookup) -> *const c_char;
     fn GeoIP_name_by_ipnum_v6_gl(db: RawGeoIp, ipnum: In6Addr, gl: &GeoIpLookup) -> *const c_char;
-    fn GeoIP_record_by_ipnum(db: RawGeoIp, ipnum: c_ulong) -> *const GeoIPRecord_;
-    fn GeoIP_record_by_ipnum_v6(db: RawGeoIp, ipnum: In6Addr) -> *const GeoIPRecord_;
-    fn GeoIPRecord_delete(gir: *const GeoIPRecord_);
+    fn GeoIP_record_by_ipnum(db: RawGeoIp, ipnum: c_ulong) -> *const GeoIpRecord;
+    fn GeoIP_record_by_ipnum_v6(db: RawGeoIp, ipnum: In6Addr) -> *const GeoIpRecord;
+    fn GeoIPRecord_delete(gir: *const GeoIpRecord);
     fn GeoIP_set_charset(db: RawGeoIp, charset: c_int) -> c_int;
 }
 
@@ -102,7 +102,7 @@ pub struct GeoIP {
 }
 
 #[repr(C)]
-pub struct GeoIPRecord_ {
+pub struct GeoIpRecord {
     country_code: *const c_char,
     country_code3: *const c_char,
     country_name: *const c_char,
@@ -149,7 +149,7 @@ unsafe fn maybe_string(c_str: *const c_char) -> Option<String> {
 }
 
 impl CityInfo {
-    unsafe fn from_geoiprecord(res: &GeoIPRecord_) -> CityInfo {
+    unsafe fn from_geoiprecord(res: &GeoIpRecord) -> CityInfo {
         CityInfo {
             country_code: maybe_string(res.country_code),
             country_code3: maybe_string(res.country_code3),
