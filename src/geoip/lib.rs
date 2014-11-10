@@ -174,6 +174,32 @@ impl fmt::Show for ASInfo {
     }
 }
 
+enum CNetworkIp {
+    V4(c_ulong),
+    V6(In6Addr)
+}
+
+impl CNetworkIp {
+    fn new(ip: IpAddr) -> CNetworkIp {
+        match ip {
+            Ipv4Addr(a, b, c, d) => {
+                V4((a as c_ulong << 24) | (b as c_ulong << 16) |
+                   (c as c_ulong << 8)  | (d as c_ulong))
+            },
+            Ipv6Addr(a, b, c, d, e, f, g, h) => {
+                V6([(a >> 8) as u8, a as u8,
+                    (b >> 8) as u8, b as u8,
+                    (c >> 8) as u8, c as u8,
+                    (d >> 8) as u8, d as u8,
+                    (e >> 8) as u8, e as u8,
+                    (f >> 8) as u8, f as u8,
+                    (g >> 8) as u8, g as u8,
+                    (h >> 8) as u8, h as u8])
+            }
+        }
+    }
+}
+
 impl GeoIp {
     pub fn open(path: &Path, options: Options) -> Result<GeoIp, String> {
         let file = match path.as_str() {
@@ -193,28 +219,9 @@ impl GeoIp {
     }
 
     pub fn city_info_by_ip(&self, ip: IpAddr) -> Option<CityInfo> {
-        let cres = match ip {
-            Ipv4Addr(a, b, c, d) => {
-                let ipnum: c_ulong =
-                    (a as c_ulong << 24) | (b as c_ulong << 16) |
-                    (c as c_ulong << 8)  | (d as c_ulong);
-                unsafe {
-                    GeoIP_record_by_ipnum(self.db, ipnum)
-                }
-            },
-            Ipv6Addr(a, b, c, d, e, f, g, h) => {
-                let in6_addr: In6Addr = [(a >> 8) as u8, a as u8,
-                                         (b >> 8) as u8, b as u8,
-                                         (c >> 8) as u8, c as u8,
-                                         (d >> 8) as u8, d as u8,
-                                         (e >> 8) as u8, e as u8,
-                                         (f >> 8) as u8, f as u8,
-                                         (g >> 8) as u8, g as u8,
-                                         (h >> 8) as u8, h as u8];
-                unsafe {
-                    GeoIP_record_by_ipnum_v6(self.db, in6_addr)
-                }
-            }
+        let cres = match CNetworkIp::new(ip) {
+            V4(ip) => unsafe { GeoIP_record_by_ipnum(self.db, ip) },
+            V6(ip) => unsafe { GeoIP_record_by_ipnum_v6(self.db, ip) }
         };
 
         if cres.is_null() { return None; }
@@ -229,29 +236,11 @@ impl GeoIp {
 
     pub fn as_info_by_ip(&self, ip: IpAddr) -> Option<ASInfo> {
         let gl = GeoIpLookup::new();
-        let cres = match ip {
-            Ipv4Addr(a, b, c, d) => {
-                let ipnum: c_ulong =
-                    (a as c_ulong << 24) | (b as c_ulong << 16) |
-                    (c as c_ulong << 8)  | (d as c_ulong);
-                unsafe {
-                    GeoIP_name_by_ipnum_gl(self.db, ipnum, &gl)
-                }
-            },
-            Ipv6Addr(a, b, c, d, e, f, g, h) => {
-                let in6_addr: In6Addr = [(a >> 8) as u8, a as u8,
-                                         (b >> 8) as u8, b as u8,
-                                         (c >> 8) as u8, c as u8,
-                                         (d >> 8) as u8, d as u8,
-                                         (e >> 8) as u8, e as u8,
-                                         (f >> 8) as u8, f as u8,
-                                         (g >> 8) as u8, g as u8,
-                                         (h >> 8) as u8, h as u8];
-                unsafe {
-                    GeoIP_name_by_ipnum_v6_gl(self.db, in6_addr, &gl)
-                }
-            }
+        let cres = match CNetworkIp::new(ip) {
+            V4(ip) => unsafe { GeoIP_name_by_ipnum_gl(self.db, ip, &gl) },
+            V6(ip) => unsafe { GeoIP_name_by_ipnum_v6_gl(self.db, ip, &gl) }
         };
+
         if cres.is_null() {
             return None;
         }
