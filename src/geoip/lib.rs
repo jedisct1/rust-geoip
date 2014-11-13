@@ -20,17 +20,17 @@ use std::c_str::CString;
 use std::fmt;
 use std::io::net::ip::{IpAddr,Ipv4Addr,Ipv6Addr};
 
-type GeoIP_ = *const c_void;
+type RawGeoIp = *const c_void;
 type In6Addr = [u8, ..16];
 
 #[repr(C)]
-struct GeoIPLookup_ {
+struct GeoIpLookup {
     netmask: c_int
 }
 
-impl GeoIPLookup_ {
-    fn new() -> GeoIPLookup_ {
-        GeoIPLookup_ {
+impl GeoIpLookup {
+    fn new() -> GeoIpLookup {
+        GeoIpLookup {
             netmask: 0
         }
     }
@@ -38,14 +38,14 @@ impl GeoIPLookup_ {
 
 #[link(name = "GeoIP")]
 extern {
-    fn GeoIP_open(dbtype: *const c_char, flags: c_int) -> GeoIP_;
-    fn GeoIP_delete(db: GeoIP_);
-    fn GeoIP_name_by_ipnum_gl(db: GeoIP_, ipnum: c_ulong, gl: &GeoIPLookup_) -> *const c_char;
-    fn GeoIP_name_by_ipnum_v6_gl(db: GeoIP_, ipnum: In6Addr, gl: &GeoIPLookup_) -> *const c_char;
-    fn GeoIP_record_by_ipnum(db: GeoIP_, ipnum: c_ulong) -> *const GeoIPRecord_;
-    fn GeoIP_record_by_ipnum_v6(db: GeoIP_, ipnum: In6Addr) -> *const GeoIPRecord_;
-    fn GeoIPRecord_delete(gir: *const GeoIPRecord_);
-    fn GeoIP_set_charset(db: GeoIP_, charset: c_int) -> c_int;
+    fn GeoIP_open(dbtype: *const c_char, flags: c_int) -> RawGeoIp;
+    fn GeoIP_delete(db: RawGeoIp);
+    fn GeoIP_name_by_ipnum_gl(db: RawGeoIp, ipnum: c_ulong, gl: *mut GeoIpLookup) -> *const c_char;
+    fn GeoIP_name_by_ipnum_v6_gl(db: RawGeoIp, ipnum: In6Addr, gl: *mut GeoIpLookup) -> *const c_char;
+    fn GeoIP_record_by_ipnum(db: RawGeoIp, ipnum: c_ulong) -> *const GeoIpRecord;
+    fn GeoIP_record_by_ipnum_v6(db: RawGeoIp, ipnum: In6Addr) -> *const GeoIpRecord;
+    fn GeoIPRecord_delete(gir: *const GeoIpRecord);
+    fn GeoIP_set_charset(db: RawGeoIp, charset: c_int) -> c_int;
 }
 
 enum Charset {
@@ -97,12 +97,12 @@ pub enum DBType {
     AccuracyRadiusEditionV6 = 38
 }
 
-pub struct GeoIP {
-    db: GeoIP_
+pub struct GeoIp {
+    db: RawGeoIp
 }
 
 #[repr(C)]
-pub struct GeoIPRecord_ {
+pub struct GeoIpRecord {
     country_code: *const c_char,
     country_code3: *const c_char,
     country_name: *const c_char,
@@ -142,63 +142,27 @@ pub struct CityInfo {
     pub netmask: uint
 }
 
+unsafe fn maybe_string(c_str: *const c_char) -> Option<String> {
+    c_str.as_ref().and_then(|opt| {
+        CString::new(opt, false).as_str().map(|s| s.to_string())
+    })
+}
+
 impl CityInfo {
-    fn from_geoiprecord(res: &GeoIPRecord_) -> CityInfo {
-        let country_code = unsafe { if res.country_code.is_null() {
-            None
-        } else {
-            CString::new(res.country_code, false).as_str().
-                and_then(|str| Some(String::from_str(str)))
-        }};
-        let country_code3 = unsafe { if res.country_code3.is_null() {
-            None
-        } else {
-            CString::new(res.country_code3, false).as_str().
-                and_then(|str| Some(String::from_str(str)))
-        }};
-        let country_name = unsafe { if res.country_name.is_null() {
-            None
-        } else {
-            CString::new(res.country_name, false).as_str().
-                and_then(|str| Some(String::from_str(str)))
-        }};
-        let region = unsafe { if res.region.is_null() {
-            None
-        } else {
-            CString::new(res.region, false).as_str().
-                and_then(|str| Some(String::from_str(str)))
-        }};
-        let city = unsafe { if res.city.is_null() {
-            None
-        } else {
-            CString::new(res.city, false).as_str().
-                and_then(|str| Some(String::from_str(str)))
-        }};
-        let postal_code = unsafe { if res.postal_code.is_null() {
-            None
-        } else {
-            CString::new(res.postal_code, false).as_str().
-                and_then(|str| Some(String::from_str(str)))
-        }};
-        let continent_code = unsafe { if res.continent_code.is_null() {
-            None
-        } else {
-            CString::new(res.continent_code, false).as_str().
-                and_then(|str| Some(String::from_str(str)))
-        }};
+    unsafe fn from_geoiprecord(res: &GeoIpRecord) -> CityInfo {
         CityInfo {
-            country_code: country_code,
-            country_code3: country_code3,
-            country_name: country_name,
-            region: region,
-            city: city,
-            postal_code: postal_code,
+            country_code: maybe_string(res.country_code),
+            country_code3: maybe_string(res.country_code3),
+            country_name: maybe_string(res.country_name),
+            region: maybe_string(res.region),
+            city: maybe_string(res.city),
+            postal_code: maybe_string(res.postal_code),
             latitude: res.latitude as f32,
             longitude: res.longitude as f32,
             dma_code: res.dma_code as uint,
             area_code: res.area_code as uint,
             charset: res.charset as uint,
-            continent_code: continent_code,
+            continent_code: maybe_string(res.continent_code),
             netmask: res.netmask as uint
         }
     }
@@ -210,8 +174,34 @@ impl fmt::Show for ASInfo {
     }
 }
 
-impl GeoIP {
-    pub fn open(path: &Path, options: Options) -> Result<GeoIP, String> {
+enum CNetworkIp {
+    V4(c_ulong),
+    V6(In6Addr)
+}
+
+impl CNetworkIp {
+    fn new(ip: IpAddr) -> CNetworkIp {
+        match ip {
+            Ipv4Addr(a, b, c, d) => {
+                V4((a as c_ulong << 24) | (b as c_ulong << 16) |
+                   (c as c_ulong << 8)  | (d as c_ulong))
+            },
+            Ipv6Addr(a, b, c, d, e, f, g, h) => {
+                V6([(a >> 8) as u8, a as u8,
+                    (b >> 8) as u8, b as u8,
+                    (c >> 8) as u8, c as u8,
+                    (d >> 8) as u8, d as u8,
+                    (e >> 8) as u8, e as u8,
+                    (f >> 8) as u8, f as u8,
+                    (g >> 8) as u8, g as u8,
+                    (h >> 8) as u8, h as u8])
+            }
+        }
+    }
+}
+
+impl GeoIp {
+    pub fn open(path: &Path, options: Options) -> Result<GeoIp, String> {
         let file = match path.as_str() {
             None => return Err(format!("Invalid path {}", path.display())),
             Some(file) => file
@@ -225,67 +215,32 @@ impl GeoIP {
         if unsafe { GeoIP_set_charset(db, UTF8 as c_int) } != 0 {
             return Err("Can't set charset to UTF8".to_string());
         }
-        Ok(GeoIP { db: db })
+        Ok(GeoIp { db: db })
     }
 
     pub fn city_info_by_ip(&self, ip: IpAddr) -> Option<CityInfo> {
-        let cres = match ip {
-            Ipv4Addr(a, b, c, d) => {
-                let ipnum: c_ulong =
-                    (a as c_ulong << 24) | (b as c_ulong << 16) |
-                    (c as c_ulong << 8)  | (d as c_ulong);
-                unsafe {
-                    GeoIP_record_by_ipnum(self.db, ipnum)
-                }
-            },
-            Ipv6Addr(a, b, c, d, e, f, g, h) => {
-                let in6_addr: In6Addr = [(a >> 8) as u8, a as u8,
-                                         (b >> 8) as u8, b as u8,
-                                         (c >> 8) as u8, c as u8,
-                                         (d >> 8) as u8, d as u8,
-                                         (e >> 8) as u8, e as u8,
-                                         (f >> 8) as u8, f as u8,
-                                         (g >> 8) as u8, g as u8,
-                                         (h >> 8) as u8, h as u8];
-                unsafe {
-                    GeoIP_record_by_ipnum_v6(self.db, in6_addr)
-                }
-            }
+        let cres = match CNetworkIp::new(ip) {
+            V4(ip) => unsafe { GeoIP_record_by_ipnum(self.db, ip) },
+            V6(ip) => unsafe { GeoIP_record_by_ipnum_v6(self.db, ip) }
         };
-        if cres.is_null() {
-            return None;
+
+        if cres.is_null() { return None; }
+
+        unsafe {
+            let city_info = CityInfo::from_geoiprecord(&*cres);
+            GeoIPRecord_delete(cres);
+            std::mem::forget(cres);
+            Some(city_info)
         }
-        let city_info = CityInfo::from_geoiprecord(&unsafe { *cres });
-        unsafe { GeoIPRecord_delete(cres) };
-        unsafe { std::mem::forget(cres) };
-        Some(city_info)
     }
 
     pub fn as_info_by_ip(&self, ip: IpAddr) -> Option<ASInfo> {
-        let gl = GeoIPLookup_::new();
-        let cres = match ip {
-            Ipv4Addr(a, b, c, d) => {
-                let ipnum: c_ulong =
-                    (a as c_ulong << 24) | (b as c_ulong << 16) |
-                    (c as c_ulong << 8)  | (d as c_ulong);
-                unsafe {
-                    GeoIP_name_by_ipnum_gl(self.db, ipnum, &gl)
-                }
-            },
-            Ipv6Addr(a, b, c, d, e, f, g, h) => {
-                let in6_addr: In6Addr = [(a >> 8) as u8, a as u8,
-                                         (b >> 8) as u8, b as u8,
-                                         (c >> 8) as u8, c as u8,
-                                         (d >> 8) as u8, d as u8,
-                                         (e >> 8) as u8, e as u8,
-                                         (f >> 8) as u8, f as u8,
-                                         (g >> 8) as u8, g as u8,
-                                         (h >> 8) as u8, h as u8];
-                unsafe {
-                    GeoIP_name_by_ipnum_v6_gl(self.db, in6_addr, &gl)
-                }
-            }
+        let mut gl = GeoIpLookup::new();
+        let cres = match CNetworkIp::new(ip) {
+            V4(ip) => unsafe { GeoIP_name_by_ipnum_gl(self.db, ip, &mut gl) },
+            V6(ip) => unsafe { GeoIP_name_by_ipnum_v6_gl(self.db, ip, &mut gl) }
         };
+
         if cres.is_null() {
             return None;
         }
@@ -315,7 +270,7 @@ impl GeoIP {
     }
 }
 
-impl Drop for GeoIP {
+impl Drop for GeoIp {
     fn drop(&mut self) {
         unsafe {
             GeoIP_delete(self.db);
@@ -325,7 +280,7 @@ impl Drop for GeoIP {
 
 #[test]
 fn geoip_test_basic() {
-    let geoip = match GeoIP::open(&from_str("/opt/geoip/GeoIPASNum.dat").unwrap(), MemoryCache) {
+    let geoip = match GeoIp::open(&from_str("/opt/geoip/GeoIPASNum.dat").unwrap(), MemoryCache) {
         Err(err) => panic!(err),
         Ok(geoip) => geoip
     };
@@ -338,7 +293,7 @@ fn geoip_test_basic() {
 
 #[test]
 fn geoip_test_city() {
-    let geoip = match GeoIP::open(&from_str("/opt/geoip/GeoLiteCity.dat").unwrap(), MemoryCache) {
+    let geoip = match GeoIp::open(&from_str("/opt/geoip/GeoLiteCity.dat").unwrap(), MemoryCache) {
         Err(err) => panic!(err),
         Ok(geoip) => geoip
     };
