@@ -183,18 +183,18 @@ impl CNetworkIp {
     fn new(ip: IpAddr) -> CNetworkIp {
         match ip {
             Ipv4Addr(a, b, c, d) => {
-                V4((a as c_ulong << 24) | (b as c_ulong << 16) |
-                   (c as c_ulong << 8)  | (d as c_ulong))
+                CNetworkIp::V4((a as c_ulong << 24) | (b as c_ulong << 16) |
+                               (c as c_ulong << 8)  | (d as c_ulong))
             },
             Ipv6Addr(a, b, c, d, e, f, g, h) => {
-                V6([(a >> 8) as u8, a as u8,
-                    (b >> 8) as u8, b as u8,
-                    (c >> 8) as u8, c as u8,
-                    (d >> 8) as u8, d as u8,
-                    (e >> 8) as u8, e as u8,
-                    (f >> 8) as u8, f as u8,
-                    (g >> 8) as u8, g as u8,
-                    (h >> 8) as u8, h as u8])
+                CNetworkIp::V6([(a >> 8) as u8, a as u8,
+                                (b >> 8) as u8, b as u8,
+                                (c >> 8) as u8, c as u8,
+                                (d >> 8) as u8, d as u8,
+                                (e >> 8) as u8, e as u8,
+                                (f >> 8) as u8, f as u8,
+                                (g >> 8) as u8, g as u8,
+                                (h >> 8) as u8, h as u8])
             }
         }
     }
@@ -212,7 +212,7 @@ impl GeoIp {
         if db.is_null() {
             return Err(format!("Can't open {}", file));
         }
-        if unsafe { GeoIP_set_charset(db, UTF8 as c_int) } != 0 {
+        if unsafe { GeoIP_set_charset(db, Charset::UTF8 as c_int) } != 0 {
             return Err("Can't set charset to UTF8".to_string());
         }
         Ok(GeoIp { db: db })
@@ -220,8 +220,8 @@ impl GeoIp {
 
     pub fn city_info_by_ip(&self, ip: IpAddr) -> Option<CityInfo> {
         let cres = match CNetworkIp::new(ip) {
-            V4(ip) => unsafe { GeoIP_record_by_ipnum(self.db, ip) },
-            V6(ip) => unsafe { GeoIP_record_by_ipnum_v6(self.db, ip) }
+            CNetworkIp::V4(ip) => unsafe { GeoIP_record_by_ipnum(self.db, ip) },
+            CNetworkIp::V6(ip) => unsafe { GeoIP_record_by_ipnum_v6(self.db, ip) }
         };
 
         if cres.is_null() { return None; }
@@ -237,8 +237,8 @@ impl GeoIp {
     pub fn as_info_by_ip(&self, ip: IpAddr) -> Option<ASInfo> {
         let mut gl = GeoIpLookup::new();
         let cres = match CNetworkIp::new(ip) {
-            V4(ip) => unsafe { GeoIP_name_by_ipnum_gl(self.db, ip, &mut gl) },
-            V6(ip) => unsafe { GeoIP_name_by_ipnum_v6_gl(self.db, ip, &mut gl) }
+            CNetworkIp::V4(ip) => unsafe { GeoIP_name_by_ipnum_gl(self.db, ip, &mut gl) },
+            CNetworkIp::V6(ip) => unsafe { GeoIP_name_by_ipnum_v6_gl(self.db, ip, &mut gl) }
         };
 
         if cres.is_null() {
