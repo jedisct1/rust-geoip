@@ -207,7 +207,7 @@ impl GeoIp {
             Some(file) => file
         };
         let db = unsafe {
-            GeoIP_open(file.to_c_str().unwrap(), options as c_int)
+            GeoIP_open(file.to_c_str().into_inner(), options as c_int)
         };
         if db.is_null() {
             return Err(format!("Can't open {}", file));
