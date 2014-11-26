@@ -1,5 +1,6 @@
 *.dSYM
 *~
 .rust
-build
 Cargo.lock
+build
+target
