@@ -11,7 +11,8 @@ Installation: use [Cargo](http://crates.io).
 Usage:
 
 ```rust
-let geoip = GeoIP::open(&Path::new("/opt/geoip/GeoIPASNum.dat"), MemoryCache).unwrap();
+let geoip = GeoIP::open(&Path::new("/opt/geoip/GeoIPASNum.dat"),
+                        GeoIP::Options::MemoryCache).unwrap();
 let ip = from_str("91.203.184.192").unwrap();
 let res = geoip.as_info_by_ip(ip).unwrap();
 assert!(res.asn == 41064);

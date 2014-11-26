@@ -280,7 +280,7 @@ impl Drop for GeoIp {
 
 #[test]
 fn geoip_test_basic() {
-    let geoip = match GeoIp::open(&from_str("/opt/geoip/GeoIPASNum.dat").unwrap(), MemoryCache) {
+    let geoip = match GeoIp::open(&from_str("/opt/geoip/GeoIPASNum.dat").unwrap(), Options::MemoryCache) {
         Err(err) => panic!(err),
         Ok(geoip) => geoip
     };
@@ -293,7 +293,7 @@ fn geoip_test_basic() {
 
 #[test]
 fn geoip_test_city() {
-    let geoip = match GeoIp::open(&from_str("/opt/geoip/GeoLiteCity.dat").unwrap(), MemoryCache) {
+    let geoip = match GeoIp::open(&from_str("/opt/geoip/GeoLiteCity.dat").unwrap(), Options::MemoryCache) {
         Err(err) => panic!(err),
         Ok(geoip) => geoip
     };
