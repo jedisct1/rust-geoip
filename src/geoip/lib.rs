@@ -3,8 +3,6 @@
 /*!
  * Bindings for the GeoIP library
  */
-#![desc = "Bindings for the GeoIP library."]
-#![license = "BSD"]
 #![crate_name = "geoip"]
 #![crate_type = "rlib"]
 
