@@ -58,6 +58,8 @@ pub enum Options {
     MmapCache = 8
 }
 
+impl Copy for Options { }
+
 pub enum DBType {
     CountryEdition = 1,
     RegionEditionRev0 = 7,
@@ -95,9 +97,13 @@ pub enum DBType {
     AccuracyRadiusEditionV6 = 38
 }
 
+impl Copy for DBType { }
+
 pub struct GeoIp {
     db: RawGeoIp
 }
+
+impl Copy for GeoIp { }
 
 #[repr(C)]
 pub struct GeoIpRecord {
@@ -115,6 +121,8 @@ pub struct GeoIpRecord {
     continent_code: *const c_char,
     netmask: c_int
 }
+
+impl Copy for GeoIpRecord { }
 
 #[deriving(Decodable, Encodable)]
 pub struct ASInfo {
