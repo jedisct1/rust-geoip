@@ -1,8 +1,4 @@
-// (C)opyleft 2013,2014 Frank Denis
 
-/*!
- * Bindings for the GeoIP library
- */
 #![crate_name = "geoip"]
 #![crate_type = "rlib"]
 
@@ -12,39 +8,12 @@
 
 extern crate libc;
 extern crate serialize;
+extern crate "geoip-sys" as geoip_sys;
 
-use libc::{c_void, c_char, c_int, c_ulong, c_float};
+use libc::{c_char, c_int, c_ulong};
 use std::c_str::CString;
 use std::fmt;
 use std::io::net::ip::{IpAddr,Ipv4Addr,Ipv6Addr};
-
-type RawGeoIp = *const c_void;
-type In6Addr = [u8, ..16];
-
-#[repr(C)]
-struct GeoIpLookup {
-    netmask: c_int
-}
-
-impl GeoIpLookup {
-    fn new() -> GeoIpLookup {
-        GeoIpLookup {
-            netmask: 0
-        }
-    }
-}
-
-#[link(name = "GeoIP")]
-extern {
-    fn GeoIP_open(dbtype: *const c_char, flags: c_int) -> RawGeoIp;
-    fn GeoIP_delete(db: RawGeoIp);
-    fn GeoIP_name_by_ipnum_gl(db: RawGeoIp, ipnum: c_ulong, gl: *mut GeoIpLookup) -> *const c_char;
-    fn GeoIP_name_by_ipnum_v6_gl(db: RawGeoIp, ipnum: In6Addr, gl: *mut GeoIpLookup) -> *const c_char;
-    fn GeoIP_record_by_ipnum(db: RawGeoIp, ipnum: c_ulong) -> *const GeoIpRecord;
-    fn GeoIP_record_by_ipnum_v6(db: RawGeoIp, ipnum: In6Addr) -> *const GeoIpRecord;
-    fn GeoIPRecord_delete(gir: *const GeoIpRecord);
-    fn GeoIP_set_charset(db: RawGeoIp, charset: c_int) -> c_int;
-}
 
 enum Charset {
     UTF8 = 1
@@ -100,29 +69,10 @@ pub enum DBType {
 impl Copy for DBType { }
 
 pub struct GeoIp {
-    db: RawGeoIp
+    db: geoip_sys::RawGeoIp
 }
 
 impl Copy for GeoIp { }
-
-#[repr(C)]
-pub struct GeoIpRecord {
-    country_code: *const c_char,
-    country_code3: *const c_char,
-    country_name: *const c_char,
-    region: *const c_char,
-    city: *const c_char,
-    postal_code: *const c_char,
-    latitude: c_float,
-    longitude: c_float,
-    dma_code: c_int,
-    area_code: c_int,
-    charset: c_int,
-    continent_code: *const c_char,
-    netmask: c_int
-}
-
-impl Copy for GeoIpRecord { }
 
 #[deriving(Decodable, Encodable)]
 pub struct ASInfo {
@@ -155,7 +105,7 @@ unsafe fn maybe_string(c_str: *const c_char) -> Option<String> {
 }
 
 impl CityInfo {
-    unsafe fn from_geoiprecord(res: &GeoIpRecord) -> CityInfo {
+    unsafe fn from_geoiprecord(res: &geoip_sys::GeoIpRecord) -> CityInfo {
         CityInfo {
             country_code: maybe_string(res.country_code),
             country_code3: maybe_string(res.country_code3),
@@ -182,7 +132,7 @@ impl fmt::Show for ASInfo {
 
 enum CNetworkIp {
     V4(c_ulong),
-    V6(In6Addr)
+    V6(geoip_sys::In6Addr)
 }
 
 impl CNetworkIp {
@@ -213,12 +163,14 @@ impl GeoIp {
             Some(file) => file
         };
         let db = unsafe {
-            GeoIP_open(file.to_c_str().into_inner(), options as c_int)
+            geoip_sys::GeoIP_open(file.to_c_str().into_inner(),
+                                  options as c_int)
         };
         if db.is_null() {
             return Err(format!("Can't open {}", file));
         }
-        if unsafe { GeoIP_set_charset(db, Charset::UTF8 as c_int) } != 0 {
+        if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::UTF8 as c_int)
+        } != 0 {
             return Err("Can't set charset to UTF8".to_string());
         }
         Ok(GeoIp { db: db })
@@ -226,25 +178,29 @@ impl GeoIp {
 
     pub fn city_info_by_ip(&self, ip: IpAddr) -> Option<CityInfo> {
         let cres = match CNetworkIp::new(ip) {
-            CNetworkIp::V4(ip) => unsafe { GeoIP_record_by_ipnum(self.db, ip) },
-            CNetworkIp::V6(ip) => unsafe { GeoIP_record_by_ipnum_v6(self.db, ip) }
+            CNetworkIp::V4(ip) => unsafe {
+                geoip_sys::GeoIP_record_by_ipnum(self.db, ip) },
+            CNetworkIp::V6(ip) => unsafe {
+                geoip_sys::GeoIP_record_by_ipnum_v6(self.db, ip) }
         };
 
         if cres.is_null() { return None; }
 
         unsafe {
             let city_info = CityInfo::from_geoiprecord(&*cres);
-            GeoIPRecord_delete(cres);
+            geoip_sys::GeoIPRecord_delete(cres);
             std::mem::forget(cres);
             Some(city_info)
         }
     }
 
     pub fn as_info_by_ip(&self, ip: IpAddr) -> Option<ASInfo> {
-        let mut gl = GeoIpLookup::new();
+        let mut gl = geoip_sys::GeoIpLookup::new();
         let cres = match CNetworkIp::new(ip) {
-            CNetworkIp::V4(ip) => unsafe { GeoIP_name_by_ipnum_gl(self.db, ip, &mut gl) },
-            CNetworkIp::V6(ip) => unsafe { GeoIP_name_by_ipnum_v6_gl(self.db, ip, &mut gl) }
+            CNetworkIp::V4(ip) => unsafe {
+                geoip_sys::GeoIP_name_by_ipnum_gl(self.db, ip, &mut gl) },
+            CNetworkIp::V6(ip) => unsafe {
+                geoip_sys::GeoIP_name_by_ipnum_v6_gl(self.db, ip, &mut gl) }
         };
 
         if cres.is_null() {
@@ -279,7 +235,7 @@ impl GeoIp {
 impl Drop for GeoIp {
     fn drop(&mut self) {
         unsafe {
-            GeoIP_delete(self.db);
+            geoip_sys::GeoIP_delete(self.db);
         }
     }
 }

@@ -12,3 +12,6 @@ repository = "https://github.com/jedisct1/rust-geoip"
 
 name = "geoip"
 path = "src/geoip/lib.rs"
+
+[dependencies.geoip-sys]
+git = "https://github.com/jedisct1/geoip-sys"
