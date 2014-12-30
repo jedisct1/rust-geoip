@@ -218,7 +218,7 @@ impl GeoIp {
                 if ! asn.starts_with("AS") {
                     return None
                 } else {
-                    from_str::<uint>(asn.slice_from(2)).unwrap()
+                    asn.slice_from(2).parse::<uint>().unwrap()
                 }
             }
         };
