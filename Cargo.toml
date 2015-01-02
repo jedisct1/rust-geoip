@@ -1,5 +1,4 @@
 [project]
-
 name = "geoip"
 version = "0.0.3"
 authors = ["Frank Denis <github@pureftpd.org>"]
@@ -9,10 +8,11 @@ homepage = "https://github.com/jedisct1/rust-geoip"
 repository = "https://github.com/jedisct1/rust-geoip"
 
 [lib]
-
 name = "geoip"
 path = "src/geoip/lib.rs"
 
 [dependencies.geoip-sys]
 geoip-sys = "*"
 
+[dependencies.rustc-serialize]
+rustc-serialize = "*"

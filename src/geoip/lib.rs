@@ -7,7 +7,7 @@
         unused_qualifications)]
 
 extern crate libc;
-extern crate serialize;
+extern crate "rustc-serialize" as rustc_serialize;
 extern crate "geoip-sys" as geoip_sys;
 
 use libc::{c_char, c_int, c_ulong};
@@ -74,14 +74,14 @@ pub struct GeoIp {
 
 impl Copy for GeoIp { }
 
-#[deriving(Decodable, Encodable)]
+#[deriving(RustcDecodable, RustcEncodable)]
 pub struct ASInfo {
     pub asn: uint,
     pub name: String,
     pub netmask: uint
 }
 
-#[deriving(Decodable, Encodable)]
+#[deriving(RustcDecodable, RustcEncodable)]
 pub struct CityInfo {
     pub country_code: Option<String>,
     pub country_code3: Option<String>,
