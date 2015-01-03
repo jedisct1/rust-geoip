@@ -8,7 +8,7 @@ extern crate libc;
 use libc::{c_void, c_char, c_int, c_ulong, c_float};
 
 pub type RawGeoIp = *const c_void;
-pub type In6Addr = [u8, ..16];
+pub type In6Addr = [u8; 16];
 
 #[repr(C)]
 pub struct GeoIpLookup {

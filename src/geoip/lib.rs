@@ -74,14 +74,14 @@ pub struct GeoIp {
 
 impl Copy for GeoIp { }
 
-#[deriving(RustcDecodable, RustcEncodable)]
+#[derive(RustcDecodable, RustcEncodable)]
 pub struct ASInfo {
     pub asn: uint,
     pub name: String,
     pub netmask: uint
 }
 
-#[deriving(RustcDecodable, RustcEncodable)]
+#[derive(RustcDecodable, RustcEncodable)]
 pub struct CityInfo {
     pub country_code: Option<String>,
     pub country_code3: Option<String>,
