@@ -139,8 +139,8 @@ impl CNetworkIp {
     fn new(ip: IpAddr) -> CNetworkIp {
         match ip {
             Ipv4Addr(a, b, c, d) => {
-                CNetworkIp::V4((a as c_ulong << 24) | (b as c_ulong << 16) |
-                               (c as c_ulong << 8)  | (d as c_ulong))
+                CNetworkIp::V4(((a as c_ulong) << 24) | ((b as c_ulong) << 16) |
+                               ((c as c_ulong) << 8)  | ((d as c_ulong)))
             },
             Ipv6Addr(a, b, c, d, e, f, g, h) => {
                 CNetworkIp::V6([(a >> 8) as u8, a as u8,
