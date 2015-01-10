@@ -5,15 +5,19 @@
 #![warn(non_camel_case_types,
         non_upper_case_globals,
         unused_qualifications)]
+#![allow(unstable)]
 
 extern crate libc;
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate "geoip-sys" as geoip_sys;
 
 use libc::{c_char, c_int, c_ulong};
-use std::c_str::CString;
+use std::ffi;
 use std::fmt;
 use std::io::net::ip::{IpAddr,Ipv4Addr,Ipv6Addr};
+
+#[cfg(test)]
+use std::str::FromStr;
 
 enum Charset {
     UTF8 = 1
@@ -72,8 +76,6 @@ pub struct GeoIp {
     db: geoip_sys::RawGeoIp
 }
 
-impl Copy for GeoIp { }
-
 #[derive(RustcDecodable, RustcEncodable)]
 pub struct ASInfo {
     pub asn: u32,
@@ -98,10 +100,12 @@ pub struct CityInfo {
     pub netmask: u32
 }
 
-unsafe fn maybe_string(c_str: *const c_char) -> Option<String> {
-    c_str.as_ref().and_then(|opt| {
-        CString::new(opt, false).as_str().map(|s| s.to_string())
-    })
+fn maybe_string(c_str: *const c_char) -> Option<String> {
+    if c_str.is_null() {
+        None
+    } else {
+        String::from_utf8(unsafe { ffi::c_str_to_bytes(&c_str) }.to_vec()).ok()
+    }
 }
 
 impl CityInfo {
@@ -116,7 +120,7 @@ impl CityInfo {
             latitude: res.latitude as f32,
             longitude: res.longitude as f32,
             dma_code: res.dma_code as u32,
-            area_code: res.area_code as ui32,
+            area_code: res.area_code as u32,
             charset: res.charset as u32,
             continent_code: maybe_string(res.continent_code),
             netmask: res.netmask as u32
@@ -163,7 +167,7 @@ impl GeoIp {
             Some(file) => file
         };
         let db = unsafe {
-            geoip_sys::GeoIP_open(file.to_c_str().into_inner(),
+            geoip_sys::GeoIP_open(ffi::CString::from_slice(file.as_bytes()).as_ptr(),
                                   options as c_int)
         };
         if db.is_null() {
@@ -206,8 +210,7 @@ impl GeoIp {
         if cres.is_null() {
             return None;
         }
-        let description_cstr = unsafe { CString::new(cres, true) };
-        let description = match description_cstr.as_str() {
+        let description = match maybe_string(cres) {
             None => return None,
             Some(description) => description
         };
@@ -242,11 +245,11 @@ impl Drop for GeoIp {
 
 #[test]
 fn geoip_test_basic() {
-    let geoip = match GeoIp::open(&from_str("/opt/geoip/GeoIPASNum.dat").unwrap(), Options::MemoryCache) {
+    let geoip = match GeoIp::open(&Path::new("/opt/geoip/GeoIPASNum.dat"), Options::MemoryCache) {
         Err(err) => panic!(err),
         Ok(geoip) => geoip
     };
-    let ip = from_str("91.203.184.192").unwrap();
+    let ip = FromStr::from_str("91.203.184.192").unwrap();
     let res = geoip.as_info_by_ip(ip).unwrap();
     assert!(res.asn == 41064);
     assert!(res.name.as_slice().contains("Telefun"));
@@ -255,11 +258,11 @@ fn geoip_test_basic() {
 
 #[test]
 fn geoip_test_city() {
-    let geoip = match GeoIp::open(&from_str("/opt/geoip/GeoLiteCity.dat").unwrap(), Options::MemoryCache) {
+    let geoip = match GeoIp::open(&Path::new("/opt/geoip/GeoLiteCity.dat"), Options::MemoryCache) {
         Err(err) => panic!(err),
         Ok(geoip) => geoip
     };
-    let ip = from_str("8.8.8.8").unwrap();
+    let ip = FromStr::from_str("8.8.8.8").unwrap();
     let res = geoip.city_info_by_ip(ip).unwrap();
     assert!(res.city.unwrap().as_slice() == "Mountain View");
 }
