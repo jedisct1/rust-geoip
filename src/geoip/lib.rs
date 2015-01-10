@@ -76,9 +76,9 @@ impl Copy for GeoIp { }
 
 #[derive(RustcDecodable, RustcEncodable)]
 pub struct ASInfo {
-    pub asn: uint,
+    pub asn: u32,
     pub name: String,
-    pub netmask: uint
+    pub netmask: u32
 }
 
 #[derive(RustcDecodable, RustcEncodable)]
@@ -91,11 +91,11 @@ pub struct CityInfo {
     pub postal_code: Option<String>,
     pub latitude: f32,
     pub longitude: f32,
-    pub dma_code: uint,
-    pub area_code: uint,
-    pub charset: uint,
+    pub dma_code: u32,
+    pub area_code: u32,
+    pub charset: u32,
     pub continent_code: Option<String>,
-    pub netmask: uint
+    pub netmask: u32
 }
 
 unsafe fn maybe_string(c_str: *const c_char) -> Option<String> {
@@ -115,11 +115,11 @@ impl CityInfo {
             postal_code: maybe_string(res.postal_code),
             latitude: res.latitude as f32,
             longitude: res.longitude as f32,
-            dma_code: res.dma_code as uint,
-            area_code: res.area_code as uint,
-            charset: res.charset as uint,
+            dma_code: res.dma_code as u32,
+            area_code: res.area_code as ui32,
+            charset: res.charset as u32,
             continent_code: maybe_string(res.continent_code),
-            netmask: res.netmask as uint
+            netmask: res.netmask as u32
         }
     }
 }
@@ -218,7 +218,7 @@ impl GeoIp {
                 if ! asn.starts_with("AS") {
                     return None
                 } else {
-                    asn.slice_from(2).parse::<uint>().unwrap()
+                    asn.slice_from(2).parse::<u32>().unwrap()
                 }
             }
         };
@@ -226,7 +226,7 @@ impl GeoIp {
         let as_info = ASInfo {
             asn: asn,
             name: name.to_string(),
-            netmask: gl.netmask as uint
+            netmask: gl.netmask as u32
         };
         Some(as_info)
     }
