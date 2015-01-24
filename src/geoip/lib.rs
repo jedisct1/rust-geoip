@@ -221,7 +221,7 @@ impl GeoIp {
                 if ! asn.starts_with("AS") {
                     return None
                 } else {
-                    asn.slice_from(2).parse::<u32>().unwrap()
+                    asn[2..].parse::<u32>().unwrap()
                 }
             }
         };
