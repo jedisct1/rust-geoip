@@ -128,7 +128,7 @@ impl CityInfo {
     }
 }
 
-impl fmt::Show for ASInfo {
+impl fmt::Debug for ASInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}\t{}", self.asn, self.name)
     }
