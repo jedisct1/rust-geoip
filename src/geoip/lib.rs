@@ -14,7 +14,7 @@ extern crate "geoip-sys" as geoip_sys;
 use libc::{c_char, c_int, c_ulong};
 use std::ffi;
 use std::fmt;
-use std::io::net::ip::{IpAddr,Ipv4Addr,Ipv6Addr};
+use std::old_io::net::ip::{IpAddr,Ipv4Addr,Ipv6Addr};
 
 #[cfg(test)]
 use std::str::FromStr;
