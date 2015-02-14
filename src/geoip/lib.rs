@@ -5,7 +5,7 @@
 #![warn(non_camel_case_types,
         non_upper_case_globals,
         unused_qualifications)]
-#![feature(libc, path, std_misc, io)]
+#![feature(libc, path, std_misc, net)]
 
 extern crate libc;
 extern crate "rustc-serialize" as rustc_serialize;
@@ -14,7 +14,7 @@ extern crate "geoip-sys" as geoip_sys;
 use libc::{c_char, c_int, c_ulong};
 use std::ffi;
 use std::fmt;
-use std::old_io::net::ip::{IpAddr,Ipv4Addr,Ipv6Addr};
+use std::net::IpAddr;
 
 #[cfg(test)]
 use std::str::FromStr;
@@ -142,19 +142,23 @@ enum CNetworkIp {
 impl CNetworkIp {
     fn new(ip: IpAddr) -> CNetworkIp {
         match ip {
-            Ipv4Addr(a, b, c, d) => {
-                CNetworkIp::V4(((a as c_ulong) << 24) | ((b as c_ulong) << 16) |
-                               ((c as c_ulong) << 8)  | ((d as c_ulong)))
+            IpAddr::V4(addr) => {
+                let b = addr.octets();
+                CNetworkIp::V4(((b[0] as c_ulong) << 24) |
+                               ((b[1] as c_ulong) << 16) |
+                               ((b[2] as c_ulong) << 8)  |
+                               ((b[3] as c_ulong)))
             },
-            Ipv6Addr(a, b, c, d, e, f, g, h) => {
-                CNetworkIp::V6([(a >> 8) as u8, a as u8,
-                                (b >> 8) as u8, b as u8,
-                                (c >> 8) as u8, c as u8,
-                                (d >> 8) as u8, d as u8,
-                                (e >> 8) as u8, e as u8,
-                                (f >> 8) as u8, f as u8,
-                                (g >> 8) as u8, g as u8,
-                                (h >> 8) as u8, h as u8])
+            IpAddr::V6(addr) => {
+                let b = addr.segments();
+                CNetworkIp::V6([(b[0] >> 8) as u8, b[0] as u8,
+                                (b[1] >> 8) as u8, b[1] as u8,
+                                (b[2] >> 8) as u8, b[2] as u8,
+                                (b[3] >> 8) as u8, b[3] as u8,
+                                (b[4] >> 8) as u8, b[4] as u8,
+                                (b[5] >> 8) as u8, b[5] as u8,
+                                (b[6] >> 8) as u8, b[6] as u8,
+                                (b[7] >> 8) as u8, b[7] as u8])
             }
         }
     }
