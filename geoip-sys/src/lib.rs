@@ -3,7 +3,7 @@
         non_upper_case_globals,
         unused_qualifications)]
         
-#![allow(unstable)]
+#![feature(libc)]
 
 extern crate libc;
 
