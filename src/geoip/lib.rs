@@ -252,7 +252,7 @@ fn geoip_test_basic() {
     let ip = FromStr::from_str("91.203.184.192").unwrap();
     let res = geoip.as_info_by_ip(ip).unwrap();
     assert!(res.asn == 41064);
-    assert!(res.name.as_slice().contains("Telefun"));
+    assert!(res.name.contains("Telefun"));
     assert!(res.netmask == 22);
 }
 
@@ -264,5 +264,5 @@ fn geoip_test_city() {
     };
     let ip = FromStr::from_str("8.8.8.8").unwrap();
     let res = geoip.city_info_by_ip(ip).unwrap();
-    assert!(res.city.unwrap().as_slice() == "Mountain View");
+    assert!(res.city.unwrap() == "Mountain View");
 }
