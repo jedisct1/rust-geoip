@@ -5,7 +5,7 @@
 #![warn(non_camel_case_types,
         non_upper_case_globals,
         unused_qualifications)]
-#![feature(libc, path, std_misc, net)]
+#![feature(libc, std_misc, net)]
 
 extern crate libc;
 extern crate "rustc-serialize" as rustc_serialize;
