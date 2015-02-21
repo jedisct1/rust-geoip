@@ -104,7 +104,8 @@ fn maybe_string(c_str: *const c_char) -> Option<String> {
     if c_str.is_null() {
         None
     } else {
-        String::from_utf8(unsafe { ffi::c_str_to_bytes(&c_str) }.to_vec()).ok()
+        String::from_utf8(unsafe { ffi::CStr::from_ptr(c_str).to_bytes() }.
+                          to_vec()).ok()
     }
 }
 
@@ -171,8 +172,8 @@ impl GeoIp {
             Some(file) => file
         };
         let db = unsafe {
-            geoip_sys::GeoIP_open(ffi::CString::from_slice(file.as_bytes()).as_ptr(),
-                                  options as c_int)
+            geoip_sys::GeoIP_open(ffi::CString::new(file.as_bytes()).
+                                  unwrap().as_ptr(), options as c_int)
         };
         if db.is_null() {
             return Err(format!("Can't open {}", file));
