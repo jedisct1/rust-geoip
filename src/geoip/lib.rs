@@ -5,7 +5,7 @@
 #![warn(non_camel_case_types,
         non_upper_case_globals,
         unused_qualifications)]
-#![feature(libc, std_misc, net)]
+#![feature(libc, std_misc, net, path)]
 
 extern crate libc;
 extern crate "rustc-serialize" as rustc_serialize;
@@ -15,6 +15,7 @@ use libc::{c_char, c_int, c_ulong};
 use std::ffi;
 use std::fmt;
 use std::net::IpAddr;
+use std::path::Path;
 
 #[cfg(test)]
 use std::str::FromStr;
@@ -167,7 +168,7 @@ impl CNetworkIp {
 
 impl GeoIp {
     pub fn open(path: &Path, options: Options) -> Result<GeoIp, String> {
-        let file = match path.as_str() {
+        let file = match path.to_str() {
             None => return Err(format!("Invalid path {}", path.display())),
             Some(file) => file
         };
