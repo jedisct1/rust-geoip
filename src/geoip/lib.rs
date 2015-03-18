@@ -5,7 +5,7 @@
 #![warn(non_camel_case_types,
         non_upper_case_globals,
         unused_qualifications)]
-#![feature(libc, net, path)]
+#![feature(libc)]
 
 extern crate libc;
 extern crate "rustc-serialize" as rustc_serialize;
@@ -14,11 +14,13 @@ extern crate "geoip-sys" as geoip_sys;
 use libc::{c_char, c_int, c_ulong};
 use std::ffi;
 use std::fmt;
-use std::net::IpAddr;
+use std::net::{Ipv4Addr, Ipv6Addr};
 use std::path::Path;
 
-#[cfg(test)]
-use std::str::FromStr;
+pub enum IpAddr {
+    V4(Ipv4Addr),
+    V6(Ipv6Addr)
+}
 
 enum Charset {
     UTF8 = 1
@@ -255,7 +257,7 @@ fn geoip_test_basic() {
         Err(err) => panic!(err),
         Ok(geoip) => geoip
     };
-    let ip = FromStr::from_str("91.203.184.192").unwrap();
+    let ip = IpAddr::V4("91.203.184.192".parse().unwrap());
     let res = geoip.as_info_by_ip(ip).unwrap();
     assert!(res.asn == 41064);
     assert!(res.name.contains("Telefun"));
@@ -268,7 +270,7 @@ fn geoip_test_city() {
         Err(err) => panic!(err),
         Ok(geoip) => geoip
     };
-    let ip = FromStr::from_str("8.8.8.8").unwrap();
+    let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.city_info_by_ip(ip).unwrap();
     assert!(res.city.unwrap() == "Mountain View");
 }
