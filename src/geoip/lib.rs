@@ -8,8 +8,8 @@
 #![feature(libc)]
 
 extern crate libc;
-extern crate "rustc-serialize" as rustc_serialize;
-extern crate "geoip-sys" as geoip_sys;
+extern crate rustc_serialize;
+extern crate geoip_sys;
 
 use libc::{c_char, c_int, c_ulong};
 use std::ffi;
@@ -121,8 +121,8 @@ impl CityInfo {
             region: maybe_string(res.region),
             city: maybe_string(res.city),
             postal_code: maybe_string(res.postal_code),
-            latitude: res.latitude as f32,
-            longitude: res.longitude as f32,
+            latitude: res.latitude,
+            longitude: res.longitude,
             dma_code: res.dma_code as u32,
             area_code: res.area_code as u32,
             charset: res.charset as u32,
