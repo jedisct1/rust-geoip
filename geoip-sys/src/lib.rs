@@ -13,11 +13,10 @@ pub type RawGeoIp = *const c_void;
 pub type In6Addr = [u8; 16];
 
 #[repr(C)]
+#[derive(Clone)]
 pub struct GeoIpLookup {
     pub netmask: c_int
 }
-
-impl Copy for GeoIpLookup { }
 
 impl GeoIpLookup {
     pub fn new() -> GeoIpLookup {
@@ -40,6 +39,8 @@ extern {
 }
 
 #[repr(C)]
+#[derive(Clone)]
+#[allow(raw_pointer_derive)]
 pub struct GeoIpRecord {
     pub country_code: *const c_char,
     pub country_code3: *const c_char,
@@ -55,5 +56,3 @@ pub struct GeoIpRecord {
     pub continent_code: *const c_char,
     pub netmask: c_int
 }
-
-impl Copy for GeoIpRecord { }
