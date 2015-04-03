@@ -1,6 +1,6 @@
 [project]
 name = "geoip"
-version = "0.0.8"
+version = "0.0.9"
 authors = ["Frank Denis <github@pureftpd.org>"]
 description = "Bindings for the GeoIP library"
 license = "ISC"

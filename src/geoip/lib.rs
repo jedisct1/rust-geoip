@@ -29,8 +29,6 @@ pub enum Options {
     MmapCache = 8
 }
 
-impl Copy for Options { }
-
 pub enum DBType {
     CountryEdition = 1,
     RegionEditionRev0 = 7,
@@ -67,8 +65,6 @@ pub enum DBType {
     PostalConfEdition = 37,
     AccuracyRadiusEditionV6 = 38
 }
-
-impl Copy for DBType { }
 
 pub struct GeoIp {
     db: geoip_sys::RawGeoIp
@@ -217,14 +213,14 @@ impl GeoIp {
             None => return None,
             Some(description) => description
         };
-        let mut di = description.splitn(1, ' ');
+        let mut di = description.splitn(2, ' ');
         let asn = match di.next() {
             None => return None,
             Some(asn) => {
                 if ! asn.starts_with("AS") {
                     return None
                 } else {
-                    asn[2..].parse::<u32>().unwrap()
+                    asn[2..].splitn(2, ' ').next().unwrap().parse::<u32>().unwrap()
                 }
             }
         };
