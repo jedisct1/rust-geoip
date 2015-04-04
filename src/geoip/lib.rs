@@ -5,7 +5,7 @@
 #![warn(non_camel_case_types,
         non_upper_case_globals,
         unused_qualifications)]
-#![feature(libc, ip_addr)]
+#![feature(libc)]
 
 extern crate libc;
 extern crate rustc_serialize;
@@ -14,8 +14,13 @@ extern crate geoip_sys;
 use libc::{c_char, c_int, c_ulong};
 use std::ffi;
 use std::fmt;
-use std::net::IpAddr;
+use std::net::{Ipv4Addr, Ipv6Addr};
 use std::path::Path;
+
+pub enum IpAddr {
+    V4(Ipv4Addr),
+    V6(Ipv6Addr)
+}
 
 enum Charset {
     UTF8 = 1
