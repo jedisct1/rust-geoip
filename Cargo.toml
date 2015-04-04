@@ -1,6 +1,6 @@
 [project]
 name = "geoip"
-version = "0.0.9"
+version = "0.0.10"
 authors = ["Frank Denis <github@pureftpd.org>"]
 description = "Bindings for the GeoIP library"
 license = "ISC"
@@ -16,3 +16,6 @@ geoip-sys = "*"
 
 [dependencies.rustc-serialize]
 rustc-serialize = "*"
+
+[dependencies.libc]
+libc = "*"
