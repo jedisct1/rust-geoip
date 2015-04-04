@@ -3,8 +3,6 @@
         non_upper_case_globals,
         unused_qualifications)]
         
-#![feature(libc)]
-
 extern crate libc;
 
 use libc::{c_void, c_char, c_int, c_ulong, c_float};
