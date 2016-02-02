@@ -38,7 +38,6 @@ extern {
 
 #[repr(C)]
 #[derive(Clone)]
-#[allow(raw_pointer_derive)]
 pub struct GeoIpRecord {
     pub country_code: *const c_char,
     pub country_code3: *const c_char,
