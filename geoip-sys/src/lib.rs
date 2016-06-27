@@ -35,7 +35,6 @@ extern {
     pub fn GeoIP_record_by_ipnum_v6(db: RawGeoIp, ipnum: In6Addr) -> *const GeoIpRecord;
     pub fn GeoIPRecord_delete(gir: *const GeoIpRecord);
     pub fn GeoIP_set_charset(db: RawGeoIp, charset: c_int) -> c_int;
-
     pub fn GeoIP_region_name_by_code(country_code: *const c_char, region_code: *const c_char) -> *const c_char;
     pub fn GeoIP_time_zone_by_country_and_region(country_code: *const c_char, region_code: *const c_char) -> *const c_char;
 }

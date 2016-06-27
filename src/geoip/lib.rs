@@ -18,11 +18,11 @@ use std::path::Path;
 
 pub enum IpAddr {
     V4(Ipv4Addr),
-    V6(Ipv6Addr)
+    V6(Ipv6Addr),
 }
 
 enum Charset {
-    UTF8 = 1
+    UTF8 = 1,
 }
 
 pub enum Options {
@@ -30,7 +30,7 @@ pub enum Options {
     MemoryCache = 1,
     CheckCache = 2,
     IndexCache = 4,
-    MmapCache = 8
+    MmapCache = 8,
 }
 
 #[derive(Debug, Clone)]
@@ -68,18 +68,18 @@ pub enum DBType {
     CityConfEdition = 35,
     RegionConfEdition = 36,
     PostalConfEdition = 37,
-    AccuracyRadiusEditionV6 = 38
+    AccuracyRadiusEditionV6 = 38,
 }
 
 pub struct GeoIp {
-    db: geoip_sys::RawGeoIp
+    db: geoip_sys::RawGeoIp,
 }
 
 #[derive(RustcDecodable, RustcEncodable)]
 pub struct ASInfo {
     pub asn: u32,
     pub name: String,
-    pub netmask: u32
+    pub netmask: u32,
 }
 
 #[derive(RustcDecodable, RustcEncodable)]
@@ -96,15 +96,14 @@ pub struct CityInfo {
     pub area_code: u32,
     pub charset: u32,
     pub continent_code: Option<String>,
-    pub netmask: u32
+    pub netmask: u32,
 }
 
 fn maybe_string(c_str: *const c_char) -> Option<String> {
     if c_str.is_null() {
         None
     } else {
-        String::from_utf8(unsafe { ffi::CStr::from_ptr(c_str).to_bytes() }.
-                          to_vec()).ok()
+        String::from_utf8(unsafe { ffi::CStr::from_ptr(c_str).to_bytes() }.to_vec()).ok()
     }
 }
 
@@ -123,7 +122,7 @@ impl CityInfo {
             area_code: res.area_code as u32,
             charset: res.charset as u32,
             continent_code: maybe_string(res.continent_code),
-            netmask: res.netmask as u32
+            netmask: res.netmask as u32,
         }
     }
 }
@@ -136,7 +135,7 @@ impl fmt::Debug for ASInfo {
 
 enum CNetworkIp {
     V4(c_ulong),
-    V6(geoip_sys::In6Addr)
+    V6(geoip_sys::In6Addr),
 }
 
 impl CNetworkIp {
@@ -144,21 +143,28 @@ impl CNetworkIp {
         match ip {
             IpAddr::V4(addr) => {
                 let b = addr.octets();
-                CNetworkIp::V4(((b[0] as c_ulong) << 24) |
-                               ((b[1] as c_ulong) << 16) |
-                               ((b[2] as c_ulong) << 8)  |
+                CNetworkIp::V4(((b[0] as c_ulong) << 24) | ((b[1] as c_ulong) << 16) |
+                               ((b[2] as c_ulong) << 8) |
                                ((b[3] as c_ulong)))
-            },
+            }
             IpAddr::V6(addr) => {
                 let b = addr.segments();
-                CNetworkIp::V6([(b[0] >> 8) as u8, b[0] as u8,
-                                (b[1] >> 8) as u8, b[1] as u8,
-                                (b[2] >> 8) as u8, b[2] as u8,
-                                (b[3] >> 8) as u8, b[3] as u8,
-                                (b[4] >> 8) as u8, b[4] as u8,
-                                (b[5] >> 8) as u8, b[5] as u8,
-                                (b[6] >> 8) as u8, b[6] as u8,
-                                (b[7] >> 8) as u8, b[7] as u8])
+                CNetworkIp::V6([(b[0] >> 8) as u8,
+                                b[0] as u8,
+                                (b[1] >> 8) as u8,
+                                b[1] as u8,
+                                (b[2] >> 8) as u8,
+                                b[2] as u8,
+                                (b[3] >> 8) as u8,
+                                b[3] as u8,
+                                (b[4] >> 8) as u8,
+                                b[4] as u8,
+                                (b[5] >> 8) as u8,
+                                b[5] as u8,
+                                (b[6] >> 8) as u8,
+                                b[6] as u8,
+                                (b[7] >> 8) as u8,
+                                b[7] as u8])
             }
         }
     }
@@ -168,31 +174,29 @@ impl GeoIp {
     pub fn open(path: &Path, options: Options) -> Result<GeoIp, String> {
         let file = match path.to_str() {
             None => return Err(format!("Invalid path {}", path.display())),
-            Some(file) => file
+            Some(file) => file,
         };
         let db = unsafe {
-            geoip_sys::GeoIP_open(ffi::CString::new(file.as_bytes()).
-                                  unwrap().as_ptr(), options as c_int)
+            geoip_sys::GeoIP_open(ffi::CString::new(file.as_bytes())
+                                      .unwrap()
+                                      .as_ptr(),
+                                  options as c_int)
         };
         if db.is_null() {
             return Err(format!("Can't open {}", file));
         }
-        if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::UTF8 as c_int)
-        } != 0 {
+        if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::UTF8 as c_int) } != 0 {
             return Err("Can't set charset to UTF8".to_string());
         }
         Ok(GeoIp { db: db })
     }
 
     pub fn open_type(db_type: DBType, options: Options) -> Result<GeoIp, String> {
-        let db = unsafe {
-            geoip_sys::GeoIP_open_type(db_type.clone() as c_int, options as c_int)
-        };
+        let db = unsafe { geoip_sys::GeoIP_open_type(db_type.clone() as c_int, options as c_int) };
         if db.is_null() {
             return Err(format!("Can't open DB of type {:?}", db_type));
         }
-        if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::UTF8 as c_int)
-        } != 0 {
+        if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::UTF8 as c_int) } != 0 {
             return Err("Can't set charset to UTF8".to_string());
         }
         Ok(GeoIp { db: db })
@@ -200,13 +204,13 @@ impl GeoIp {
 
     pub fn city_info_by_ip(&self, ip: IpAddr) -> Option<CityInfo> {
         let cres = match CNetworkIp::new(ip) {
-            CNetworkIp::V4(ip) => unsafe {
-                geoip_sys::GeoIP_record_by_ipnum(self.db, ip) },
-            CNetworkIp::V6(ip) => unsafe {
-                geoip_sys::GeoIP_record_by_ipnum_v6(self.db, ip) }
+            CNetworkIp::V4(ip) => unsafe { geoip_sys::GeoIP_record_by_ipnum(self.db, ip) },
+            CNetworkIp::V6(ip) => unsafe { geoip_sys::GeoIP_record_by_ipnum_v6(self.db, ip) },
         };
 
-        if cres.is_null() { return None; }
+        if cres.is_null() {
+            return None;
+        }
 
         unsafe {
             let city_info = CityInfo::from_geoiprecord(&*cres);
@@ -218,23 +222,36 @@ impl GeoIp {
 
     pub fn region_name_by_code(country_code: &str, region_code: &str) -> Option<&'static str> {
         unsafe {
-            let cstr = geoip_sys::GeoIP_region_name_by_code(
-                ffi::CString::new(country_code).unwrap().as_ptr(),
-                ffi::CString::new(region_code).unwrap().as_ptr());
+            let cstr = geoip_sys::GeoIP_region_name_by_code(ffi::CString::new(country_code)
+                                                                .unwrap()
+                                                                .as_ptr(),
+                                                            ffi::CString::new(region_code)
+                                                                .unwrap()
+                                                                .as_ptr());
 
-            if cstr.is_null() { return None; }
+            if cstr.is_null() {
+                return None;
+            }
 
             Some(ffi::CStr::from_ptr(cstr).to_str().expect("invalid region name data"))
         }
     }
 
-    pub fn time_zone_by_country_and_region(country_code: &str, region_code: &str) -> Option<&'static str> {
+    pub fn time_zone_by_country_and_region(country_code: &str,
+                                           region_code: &str)
+                                           -> Option<&'static str> {
         unsafe {
-            let cstr = geoip_sys::GeoIP_time_zone_by_country_and_region(
-                ffi::CString::new(country_code).unwrap().as_ptr(),
-                ffi::CString::new(region_code).unwrap().as_ptr());
+            let cstr =
+                geoip_sys::GeoIP_time_zone_by_country_and_region(ffi::CString::new(country_code)
+                                                                     .unwrap()
+                                                                     .as_ptr(),
+                                                                 ffi::CString::new(region_code)
+                                                                     .unwrap()
+                                                                     .as_ptr());
 
-            if cstr.is_null() { return None; }
+            if cstr.is_null() {
+                return None;
+            }
 
             Some(ffi::CStr::from_ptr(cstr).to_str().expect("invalid time zone data"))
         }
@@ -244,9 +261,11 @@ impl GeoIp {
         let mut gl = geoip_sys::GeoIpLookup::new();
         let cres = match CNetworkIp::new(ip) {
             CNetworkIp::V4(ip) => unsafe {
-                geoip_sys::GeoIP_name_by_ipnum_gl(self.db, ip, &mut gl) },
+                geoip_sys::GeoIP_name_by_ipnum_gl(self.db, ip, &mut gl)
+            },
             CNetworkIp::V6(ip) => unsafe {
-                geoip_sys::GeoIP_name_by_ipnum_v6_gl(self.db, ip, &mut gl) }
+                geoip_sys::GeoIP_name_by_ipnum_v6_gl(self.db, ip, &mut gl)
+            },
         };
 
         if cres.is_null() {
@@ -254,14 +273,14 @@ impl GeoIp {
         }
         let description = match maybe_string(cres) {
             None => return None,
-            Some(description) => description
+            Some(description) => description,
         };
         let mut di = description.splitn(2, ' ');
         let asn = match di.next() {
             None => return None,
             Some(asn) => {
-                if ! asn.starts_with("AS") {
-                    return None
+                if !asn.starts_with("AS") {
+                    return None;
                 } else {
                     asn[2..].splitn(2, ' ').next().unwrap().parse::<u32>().unwrap()
                 }
@@ -271,7 +290,7 @@ impl GeoIp {
         let as_info = ASInfo {
             asn: asn,
             name: name.to_string(),
-            netmask: gl.netmask as u32
+            netmask: gl.netmask as u32,
         };
         Some(as_info)
     }
@@ -287,9 +306,10 @@ impl Drop for GeoIp {
 
 #[test]
 fn geoip_test_basic() {
-    let geoip = match GeoIp::open(&Path::new("/opt/geoip/GeoIPASNum.dat"), Options::MemoryCache) {
+    let geoip = match GeoIp::open(&Path::new("/opt/geoip/GeoIPASNum.dat"),
+                                  Options::MemoryCache) {
         Err(err) => panic!(err),
-        Ok(geoip) => geoip
+        Ok(geoip) => geoip,
     };
     let ip = IpAddr::V4("91.203.184.192".parse().unwrap());
     let res = geoip.as_info_by_ip(ip).unwrap();
@@ -300,9 +320,10 @@ fn geoip_test_basic() {
 
 #[test]
 fn geoip_test_city() {
-    let geoip = match GeoIp::open(&Path::new("/opt/geoip/GeoLiteCity.dat"), Options::MemoryCache) {
+    let geoip = match GeoIp::open(&Path::new("/opt/geoip/GeoLiteCity.dat"),
+                                  Options::MemoryCache) {
         Err(err) => panic!(err),
-        Ok(geoip) => geoip
+        Ok(geoip) => geoip,
     };
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.city_info_by_ip(ip).unwrap();
@@ -313,7 +334,7 @@ fn geoip_test_city() {
 fn geoip_test_city_type() {
     let geoip = match GeoIp::open_type(DBType::CityEditionRev1, Options::MemoryCache) {
         Err(err) => panic!(err),
-        Ok(geoip) => geoip
+        Ok(geoip) => geoip,
     };
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.city_info_by_ip(ip).unwrap();
@@ -329,5 +350,6 @@ fn geoip_region_name_by_code() {
 #[test]
 fn geoip_time_zone_by_country_and_region() {
     assert_eq!(GeoIp::time_zone_by_country_and_region("foo", "bar"), None);
-    assert_eq!(GeoIp::time_zone_by_country_and_region("US", "CA"), Some("America/Los_Angeles"));
+    assert_eq!(GeoIp::time_zone_by_country_and_region("US", "CA"),
+               Some("America/Los_Angeles"));
 }
