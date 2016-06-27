@@ -33,6 +33,7 @@ pub enum Options {
     MmapCache = 8
 }
 
+#[derive(Debug, Clone)]
 pub enum DBType {
     CountryEdition = 1,
     RegionEditionRev0 = 7,
@@ -183,6 +184,20 @@ impl GeoIp {
         Ok(GeoIp { db: db })
     }
 
+    pub fn open_type(db_type: DBType, options: Options) -> Result<GeoIp, String> {
+        let db = unsafe {
+            geoip_sys::GeoIP_open_type(db_type.clone() as c_int, options as c_int)
+        };
+        if db.is_null() {
+            return Err(format!("Can't open DB of type {:?}", db_type));
+        }
+        if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::UTF8 as c_int)
+        } != 0 {
+            return Err("Can't set charset to UTF8".to_string());
+        }
+        Ok(GeoIp { db: db })
+    }
+
     pub fn city_info_by_ip(&self, ip: IpAddr) -> Option<CityInfo> {
         let cres = match CNetworkIp::new(ip) {
             CNetworkIp::V4(ip) => unsafe {
@@ -198,6 +213,30 @@ impl GeoIp {
             geoip_sys::GeoIPRecord_delete(cres);
             std::mem::forget(cres);
             Some(city_info)
+        }
+    }
+
+    pub fn region_name_by_code(country_code: &str, region_code: &str) -> Option<&'static str> {
+        unsafe {
+            let cstr = geoip_sys::GeoIP_region_name_by_code(
+                ffi::CString::new(country_code).unwrap().as_ptr(),
+                ffi::CString::new(region_code).unwrap().as_ptr());
+
+            if cstr.is_null() { return None; }
+
+            Some(ffi::CStr::from_ptr(cstr).to_str().expect("invalid region name data"))
+        }
+    }
+
+    pub fn time_zone_by_country_and_region(country_code: &str, region_code: &str) -> Option<&'static str> {
+        unsafe {
+            let cstr = geoip_sys::GeoIP_time_zone_by_country_and_region(
+                ffi::CString::new(country_code).unwrap().as_ptr(),
+                ffi::CString::new(region_code).unwrap().as_ptr());
+
+            if cstr.is_null() { return None; }
+
+            Some(ffi::CStr::from_ptr(cstr).to_str().expect("invalid time zone data"))
         }
     }
 
@@ -268,4 +307,27 @@ fn geoip_test_city() {
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.city_info_by_ip(ip).unwrap();
     assert!(res.city.unwrap() == "Mountain View");
+}
+
+#[test]
+fn geoip_test_city_type() {
+    let geoip = match GeoIp::open_type(DBType::CityEditionRev1, Options::MemoryCache) {
+        Err(err) => panic!(err),
+        Ok(geoip) => geoip
+    };
+    let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
+    let res = geoip.city_info_by_ip(ip).unwrap();
+    assert!(res.city.unwrap() == "Mountain View");
+}
+
+#[test]
+fn geoip_region_name_by_code() {
+    assert_eq!(GeoIp::region_name_by_code("foo", "bar"), None);
+    assert_eq!(GeoIp::region_name_by_code("US", "CA"), Some("California"));
+}
+
+#[test]
+fn geoip_time_zone_by_country_and_region() {
+    assert_eq!(GeoIp::time_zone_by_country_and_region("foo", "bar"), None);
+    assert_eq!(GeoIp::time_zone_by_country_and_region("US", "CA"), Some("America/Los_Angeles"));
 }
