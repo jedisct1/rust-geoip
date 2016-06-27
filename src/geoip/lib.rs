@@ -316,7 +316,11 @@ impl Drop for GeoIp {
 
 #[test]
 fn geoip_test_basic() {
-    let geoip = GeoIp::open(&Path::new("/opt/geoip/GeoIPASNum.dat"), Options::MemoryCache).unwrap();
+    let geoip = match GeoIp::open(&Path::new("/opt/geoip/GeoIPASNum.dat"),
+                                  Options::MemoryCache) {
+        Err(err) => panic!(err),
+        Ok(geoip) => geoip,
+    };
     let ip = IpAddr::V4("91.203.184.192".parse().unwrap());
     let res = geoip.as_info_by_ip(ip).unwrap();
     assert!(res.asn == 41064);
@@ -326,7 +330,11 @@ fn geoip_test_basic() {
 
 #[test]
 fn geoip_test_city() {
-    let geoip = GeoIp::open(&Path::new("/opt/geoip/GeoLiteCity.dat"), Options::MemoryCache).unwrap();
+    let geoip = match GeoIp::open(&Path::new("/opt/geoip/GeoLiteCity.dat"),
+                                  Options::MemoryCache) {
+        Err(err) => panic!(err),
+        Ok(geoip) => geoip,
+    };
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.city_info_by_ip(ip).unwrap();
     assert!(res.city.unwrap() == "Mountain View");
@@ -334,7 +342,10 @@ fn geoip_test_city() {
 
 #[test]
 fn geoip_test_city_type() {
-    let geoip = GeoIp::open_type(DBType::CityEditionRev1, Options::MemoryCache).unwrap();
+    let geoip = match GeoIp::open_type(DBType::CityEditionRev1, Options::MemoryCache) {
+        Err(err) => panic!(err),
+        Ok(geoip) => geoip,
+    };
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.city_info_by_ip(ip).unwrap();
     assert!(res.city.unwrap() == "Mountain View");
