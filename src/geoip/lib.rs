@@ -83,14 +83,14 @@ pub struct GeoIp {
     db: geoip_sys::RawGeoIp,
 }
 
-#[derive(Debug, RustcDecodable, RustcEncodable)]
+#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct ASInfo {
     pub asn: u32,
     pub name: String,
     pub netmask: u32,
 }
 
-#[derive(Debug, RustcDecodable, RustcEncodable)]
+#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct CityInfo {
     pub country_code: Option<String>,
     pub country_code3: Option<String>,
