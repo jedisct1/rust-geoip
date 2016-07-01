@@ -13,7 +13,6 @@ extern crate lazy_static;
 
 use libc::{c_char, c_int, c_ulong};
 use std::ffi;
-use std::fmt;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::path::Path;
 use std::sync::Mutex;
@@ -22,15 +21,18 @@ lazy_static! {
     static ref LOCK: Mutex<()> = Mutex::new(());
 }
 
+#[derive(Debug, Clone)]
 pub enum IpAddr {
     V4(Ipv4Addr),
     V6(Ipv6Addr),
 }
 
 enum Charset {
-    UTF8 = 1,
+    // Iso88591 = 0,
+    Utf8 = 1,
 }
 
+#[derive(Debug, Clone)]
 pub enum Options {
     Standard = 0,
     MemoryCache = 1,
@@ -81,14 +83,14 @@ pub struct GeoIp {
     db: geoip_sys::RawGeoIp,
 }
 
-#[derive(RustcDecodable, RustcEncodable)]
+#[derive(Debug, RustcDecodable, RustcEncodable)]
 pub struct ASInfo {
     pub asn: u32,
     pub name: String,
     pub netmask: u32,
 }
 
-#[derive(RustcDecodable, RustcEncodable)]
+#[derive(Debug, RustcDecodable, RustcEncodable)]
 pub struct CityInfo {
     pub country_code: Option<String>,
     pub country_code3: Option<String>,
@@ -98,9 +100,8 @@ pub struct CityInfo {
     pub postal_code: Option<String>,
     pub latitude: f32,
     pub longitude: f32,
-    pub dma_code: u32,
-    pub area_code: u32,
-    pub charset: u32,
+    pub dma_code: Option<u32>,
+    pub area_code: Option<u32>,
     pub continent_code: Option<String>,
     pub netmask: u32,
 }
@@ -110,6 +111,14 @@ fn maybe_string(c_str: *const c_char) -> Option<String> {
         None
     } else {
         String::from_utf8(unsafe { ffi::CStr::from_ptr(c_str).to_bytes() }.to_vec()).ok()
+    }
+}
+
+fn maybe_code(code: u32) -> Option<u32> {
+    if code == 0 {
+        None
+    } else {
+        Some(code)
     }
 }
 
@@ -124,18 +133,11 @@ impl CityInfo {
             postal_code: maybe_string(res.postal_code),
             latitude: res.latitude,
             longitude: res.longitude,
-            dma_code: res.dma_code as u32,
-            area_code: res.area_code as u32,
-            charset: res.charset as u32,
+            dma_code: maybe_code(res.dma_code as u32),
+            area_code: maybe_code(res.area_code as u32),
             continent_code: maybe_string(res.continent_code),
             netmask: res.netmask as u32,
         }
-    }
-}
-
-impl fmt::Debug for ASInfo {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}\t{}", self.asn, self.name)
     }
 }
 
@@ -191,7 +193,7 @@ impl GeoIp {
         if db.is_null() {
             return Err(format!("Can't open {}", file));
         }
-        if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::UTF8 as c_int) } != 0 {
+        if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::Utf8 as c_int) } != 0 {
             return Err("Can't set charset to UTF8".to_string());
         }
         Ok(GeoIp { db: db })
@@ -206,7 +208,7 @@ impl GeoIp {
         if db.is_null() {
             return Err(format!("Can't open DB of type {:?}", db_type));
         }
-        if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::UTF8 as c_int) } != 0 {
+        if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::Utf8 as c_int) } != 0 {
             return Err("Can't set charset to UTF8".to_string());
         }
         Ok(GeoIp { db: db })
@@ -316,36 +318,50 @@ impl Drop for GeoIp {
 
 #[test]
 fn geoip_test_basic() {
-    let geoip = match GeoIp::open(&Path::new("/opt/geoip/GeoIPASNum.dat"),
-                                  Options::MemoryCache) {
-        Err(err) => panic!(err),
-        Ok(geoip) => geoip,
-    };
-    let ip = IpAddr::V4("91.203.184.192".parse().unwrap());
+    let geoip = GeoIp::open(&Path::new("/opt/geoip/GeoIPASNum.dat"),
+                            Options::MemoryCache)
+        .unwrap();
+
+    let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.as_info_by_ip(ip).unwrap();
-    assert!(res.asn == 41064);
-    assert!(res.name.contains("Telefun"));
-    assert!(res.netmask == 22);
+    assert_eq!(res.asn, 15169);
+    assert_eq!(res.name, "Google Inc.".to_string());
+    assert_eq!(res.netmask, 24);
 }
 
 #[test]
 fn geoip_test_city() {
-    let geoip = match GeoIp::open(&Path::new("/opt/geoip/GeoLiteCity.dat"),
-                                  Options::MemoryCache) {
-        Err(err) => panic!(err),
-        Ok(geoip) => geoip,
-    };
+    let geoip = GeoIp::open(&Path::new("/opt/geoip/GeoLiteCity.dat"),
+                            Options::MemoryCache)
+        .unwrap();
+
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.city_info_by_ip(ip).unwrap();
-    assert!(res.city.unwrap() == "Mountain View");
+    assert_eq!(res.city, Some("Mountain View".to_string()));
+}
+
+#[test]
+fn geoip_test_city_maybe_code() {
+    let geoip = GeoIp::open(&Path::new("/opt/geoip/GeoLiteCity.dat"),
+                            Options::MemoryCache)
+        .unwrap();
+
+    let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
+    let res = geoip.city_info_by_ip(ip).unwrap();
+    assert!(res.city.is_some());
+    assert_eq!(res.dma_code, Some(807));
+    assert_eq!(res.area_code, Some(650));
+
+    let ip = IpAddr::V4("95.144.124.132".parse().unwrap());
+    let res = geoip.city_info_by_ip(ip).unwrap();
+    assert!(res.city.is_some());
+    assert!(res.dma_code.is_none());
+    assert!(res.area_code.is_none());
 }
 
 #[test]
 fn geoip_test_city_type() {
-    let geoip = match GeoIp::open_type(DBType::CityEditionRev1, Options::MemoryCache) {
-        Err(err) => panic!(err),
-        Ok(geoip) => geoip,
-    };
+    let geoip = GeoIp::open_type(DBType::CityEditionRev1, Options::MemoryCache).unwrap();
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.city_info_by_ip(ip).unwrap();
     assert!(res.city.unwrap() == "Mountain View");
