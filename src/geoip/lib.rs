@@ -28,7 +28,6 @@ pub enum IpAddr {
 }
 
 enum Charset {
-    // Iso88591 = 0,
     Utf8 = 1,
 }
 
