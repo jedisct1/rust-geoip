@@ -16,6 +16,7 @@ use std::ffi;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::path::Path;
 use std::sync::Mutex;
+use std::fmt::{self, Debug};
 
 lazy_static! {
     static ref LOCK: Mutex<()> = Mutex::new(());
@@ -328,6 +329,14 @@ impl Drop for GeoIp {
         unsafe {
             geoip_sys::GeoIP_delete(self.db);
         }
+    }
+}
+
+impl Debug for GeoIp {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("GeoIp")
+            .field("info", &self.info())
+            .finish()
     }
 }
 
