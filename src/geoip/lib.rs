@@ -11,7 +11,7 @@ extern crate geoip_sys;
 #[macro_use]
 extern crate lazy_static;
 
-use libc::{c_char, c_int, c_ulong};
+use libc::{c_char, c_int, c_ulong, c_void};
 use std::ffi;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::path::Path;
@@ -114,7 +114,11 @@ fn maybe_string(c_str: *const c_char) -> Option<String> {
 }
 
 fn maybe_code(code: u32) -> Option<u32> {
-    if code == 0 { None } else { Some(code) }
+    if code == 0 {
+        None
+    } else {
+        Some(code)
+    }
 }
 
 impl CityInfo {
@@ -207,6 +211,22 @@ impl GeoIp {
             return Err("Can't set charset to UTF8".to_string());
         }
         Ok(GeoIp { db: db })
+    }
+
+    // TODO: define proper error type
+    pub fn info(&self) -> Result<String, String> {
+        let c_string = unsafe { geoip_sys::GeoIP_database_info(self.db) };
+
+        if c_string.is_null() {
+            Err("Failed to read info from database".to_string())
+        } else {
+            let ret = unsafe { ffi::CStr::from_ptr(c_string) }
+                .to_str()
+                .map_err(|e| format!("Invalid database info string: {}", e))
+                .map(|s| s.to_string());
+            unsafe { libc::free(c_string as *mut c_void) };
+            ret
+        }
     }
 
     pub fn city_info_by_ip(&self, ip: IpAddr) -> Option<CityInfo> {
@@ -360,6 +380,12 @@ fn geoip_test_city_type() {
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.city_info_by_ip(ip).unwrap();
     assert!(res.city.unwrap() == "Mountain View");
+}
+
+#[test]
+fn geoip_test_info() {
+    let geoip = GeoIp::open_type(DBType::CityEditionRev1, Options::MemoryCache).unwrap();
+    assert!(geoip.info().unwrap().contains("GEO-133"));
 }
 
 #[test]
