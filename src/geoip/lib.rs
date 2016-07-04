@@ -15,7 +15,9 @@ use libc::{c_char, c_int, c_ulong, c_void};
 use std::os::unix::ffi::OsStrExt;
 use std::ffi;
 use std::net::{Ipv4Addr, Ipv6Addr};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::str::Utf8Error;
+use std::error::Error;
 use std::sync::Mutex;
 use std::fmt::{self, Debug};
 
@@ -29,7 +31,8 @@ pub enum IpAddr {
     V6(Ipv6Addr),
 }
 
-enum Charset {
+#[derive(Debug, Clone)]
+pub enum Charset {
     Utf8 = 1,
 }
 
@@ -179,51 +182,148 @@ impl CNetworkIp {
     }
 }
 
+#[derive(Debug, Clone)]
+pub enum OpenPathError {
+    InvalidPath(ffi::NulError),
+    OpenFailed(PathBuf),
+    SetCharsetFailed(Charset),
+}
+
+impl From<ffi::NulError> for OpenPathError {
+    fn from(err: ffi::NulError) -> Self {
+        OpenPathError::InvalidPath(err)
+    }
+}
+
+impl fmt::Display for OpenPathError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            OpenPathError::InvalidPath(ref e) => write!(f, "Given path was invalid: {}", e),
+            OpenPathError::OpenFailed(ref path) => {
+                write!(f, "Failed to open database from path '{}'", path.display())
+            }
+            OpenPathError::SetCharsetFailed(ref charset) => {
+                write!(f, "Failed to set database charset {:?}", charset)
+            }
+        }
+    }
+}
+
+impl Error for OpenPathError {
+    fn description(&self) -> &str {
+        match *self {
+            OpenPathError::InvalidPath(_) => "invalid database path",
+            OpenPathError::OpenFailed(_) => "failed to open database from path",
+            OpenPathError::SetCharsetFailed(_) => "failed to set database charset",
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum OpenTypeError {
+    OpenFailed(DBType),
+    SetCharsetFailed(Charset),
+}
+
+impl fmt::Display for OpenTypeError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            OpenTypeError::OpenFailed(ref t) => {
+                write!(f, "Failed to open database of type {:?}", t)
+            }
+            OpenTypeError::SetCharsetFailed(ref charset) => {
+                write!(f, "Failed to set database charset {:?}", charset)
+            }
+        }
+    }
+}
+
+impl Error for OpenTypeError {
+    fn description(&self) -> &str {
+        match *self {
+            OpenTypeError::OpenFailed(_) => "failed to open database of type",
+            OpenTypeError::SetCharsetFailed(_) => "failed to set database charset",
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum ReadInfoError {
+    InfoFailed,
+    InvalidData(Utf8Error),
+}
+
+impl From<Utf8Error> for ReadInfoError {
+    fn from(err: Utf8Error) -> Self {
+        ReadInfoError::InvalidData(err)
+    }
+}
+
+impl fmt::Display for ReadInfoError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            ReadInfoError::InfoFailed => write!(f, "Failed to get database info"),
+            ReadInfoError::InvalidData(ref err) => write!(f, "Invalid info data: {}", err),
+        }
+    }
+}
+
+impl Error for ReadInfoError {
+    fn description(&self) -> &str {
+        match *self {
+            ReadInfoError::InfoFailed => "failed to get database info",
+            ReadInfoError::InvalidData(_) => "invalid info data",
+        }
+    }
+}
+
 impl GeoIp {
-    pub fn open(path: &Path, options: Options) -> Result<GeoIp, String> {
+    pub fn open(path: &Path, options: Options) -> Result<GeoIp, OpenPathError> {
         let db = unsafe {
-            geoip_sys::GeoIP_open(ffi::CString::new(path.as_os_str().as_bytes())
-                                      .unwrap()
-                                      .as_ptr(),
+            geoip_sys::GeoIP_open(try!(ffi::CString::new(path.as_os_str().as_bytes())).as_ptr(),
                                   options as c_int)
         };
         if db.is_null() {
-            return Err(format!("Can't open {}", path.display()));
+            return Err(OpenPathError::OpenFailed(path.to_owned()));
         }
         if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::Utf8 as c_int) } != 0 {
-            return Err("Can't set charset to UTF8".to_string());
+            return Err(OpenPathError::SetCharsetFailed(Charset::Utf8));
         }
         Ok(GeoIp { db: db })
     }
 
-    pub fn open_type(db_type: DBType, options: Options) -> Result<GeoIp, String> {
+    pub fn open_type(db_type: DBType, options: Options) -> Result<GeoIp, OpenTypeError> {
         let db = unsafe {
             // GeoIP_open_type initialises global state causing races
             let _lock = LOCK.lock().unwrap();
             geoip_sys::GeoIP_open_type(db_type.clone() as c_int, options as c_int)
         };
         if db.is_null() {
-            return Err(format!("Can't open DB of type {:?}", db_type));
+            return Err(OpenTypeError::OpenFailed(db_type));
         }
         if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::Utf8 as c_int) } != 0 {
-            return Err("Can't set charset to UTF8".to_string());
+            return Err(OpenTypeError::SetCharsetFailed(Charset::Utf8));
         }
         Ok(GeoIp { db: db })
     }
 
-    // TODO: define proper error type
-    pub fn info(&self) -> Result<String, String> {
+    pub fn info(&self) -> Result<String, ReadInfoError> {
         let c_string = unsafe { geoip_sys::GeoIP_database_info(self.db) };
 
         if c_string.is_null() {
-            Err("Failed to read info from database".to_string())
+            Err(ReadInfoError::InfoFailed)
         } else {
-            let ret = unsafe { ffi::CStr::from_ptr(c_string) }
-                .to_str()
-                .map_err(|e| format!("Invalid database info string: {}", e))
-                .map(|s| s.to_string());
-            unsafe { libc::free(c_string as *mut c_void) };
-            ret
+            match unsafe { ffi::CStr::from_ptr(c_string) }.to_str() {
+                Ok(str) => {
+                    let ret = str.to_string();
+                    unsafe { libc::free(c_string as *mut c_void) };
+                    Ok(ret)
+                }
+                Err(err) => {
+                    unsafe { libc::free(c_string as *mut c_void) };
+                    Err(From::from(err))
+                }
+            }
         }
     }
 
@@ -359,6 +459,14 @@ fn geoip_test_city() {
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.city_info_by_ip(ip).unwrap();
     assert_eq!(res.city, Some("Mountain View".to_string()));
+}
+
+#[test]
+fn geoip_test_city_open_fail() {
+    let geoip = GeoIp::open(&Path::new("foobar.baz"), Options::MemoryCache);
+
+    assert_eq!("Failed to open database from path 'foobar.baz'",
+               &format!("{}", geoip.unwrap_err()));
 }
 
 #[test]
