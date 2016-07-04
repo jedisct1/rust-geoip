@@ -12,6 +12,7 @@ extern crate geoip_sys;
 extern crate lazy_static;
 
 use libc::{c_char, c_int, c_ulong, c_void};
+use std::os::unix::ffi::OsStrExt;
 use std::ffi;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::path::Path;
@@ -180,18 +181,14 @@ impl CNetworkIp {
 
 impl GeoIp {
     pub fn open(path: &Path, options: Options) -> Result<GeoIp, String> {
-        let file = match path.to_str() {
-            None => return Err(format!("Invalid path {}", path.display())),
-            Some(file) => file,
-        };
         let db = unsafe {
-            geoip_sys::GeoIP_open(ffi::CString::new(file.as_bytes())
+            geoip_sys::GeoIP_open(ffi::CString::new(path.as_os_str().as_bytes())
                                       .unwrap()
                                       .as_ptr(),
                                   options as c_int)
         };
         if db.is_null() {
-            return Err(format!("Can't open {}", file));
+            return Err(format!("Can't open {}", path.display()));
         }
         if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::Utf8 as c_int) } != 0 {
             return Err("Can't set charset to UTF8".to_string());
