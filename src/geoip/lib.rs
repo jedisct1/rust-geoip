@@ -119,11 +119,7 @@ fn maybe_string(c_str: *const c_char) -> Option<String> {
 }
 
 fn maybe_code(code: u32) -> Option<u32> {
-    if code == 0 {
-        None
-    } else {
-        Some(code)
-    }
+    if code == 0 { None } else { Some(code) }
 }
 
 impl CityInfo {
