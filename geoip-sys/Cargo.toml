@@ -1,11 +1,15 @@
 [package]
 name = "geoip-sys"
-version = "0.0.10"
+version = "0.0.12"
 authors = ["Frank Denis <github@pureftpd.org>"]
 description = "Low-level bindings for the GeoIP library"
 license = "ISC"
 homepage = "https://github.com/jedisct1/rust-geoip"
 repository = "https://github.com/jedisct1/rust-geoip"
 
+[badges]
+travis-ci = { repository = "jedisct1/rust-geoip" }
+appveyor = { repository = "jedisct1/rust-geoip" }
+
 [dependencies]
-libc = "^0.2.6"
+libc = "^0.2.20"
