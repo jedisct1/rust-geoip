@@ -14,7 +14,7 @@ extern crate lazy_static;
 use libc::{c_char, c_int, c_ulong, c_void};
 use std::os::unix::ffi::OsStrExt;
 use std::ffi;
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 use std::str::Utf8Error;
 use std::error::Error;
@@ -23,12 +23,6 @@ use std::fmt::{self, Debug};
 
 lazy_static! {
     static ref LOCK: Mutex<()> = Mutex::new(());
-}
-
-#[derive(Debug, Clone)]
-pub enum IpAddr {
-    V4(Ipv4Addr),
-    V6(Ipv6Addr),
 }
 
 #[derive(Debug, Clone)]
