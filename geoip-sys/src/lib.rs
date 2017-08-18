@@ -13,31 +13,43 @@ pub type In6Addr = [u8; 16];
 #[repr(C)]
 #[derive(Clone)]
 pub struct GeoIpLookup {
-    pub netmask: c_int
+    pub netmask: c_int,
 }
 
 impl GeoIpLookup {
     pub fn new() -> GeoIpLookup {
-        GeoIpLookup {
-            netmask: 0
-        }
+        GeoIpLookup { netmask: 0 }
     }
 }
 
 #[link(name = "GeoIP")]
-extern {
+extern "C" {
     pub fn GeoIP_open(dbtype: *const c_char, flags: c_int) -> RawGeoIp;
     pub fn GeoIP_open_type(db_type: c_int, flags: c_int) -> RawGeoIp;
     pub fn GeoIP_delete(db: RawGeoIp);
     pub fn GeoIP_database_info(db: RawGeoIp) -> *mut c_char;
-    pub fn GeoIP_name_by_ipnum_gl(db: RawGeoIp, ipnum: c_ulong, gl: *mut GeoIpLookup) -> *const c_char;
-    pub fn GeoIP_name_by_ipnum_v6_gl(db: RawGeoIp, ipnum: In6Addr, gl: *mut GeoIpLookup) -> *const c_char;
+    pub fn GeoIP_name_by_ipnum_gl(
+        db: RawGeoIp,
+        ipnum: c_ulong,
+        gl: *mut GeoIpLookup,
+    ) -> *const c_char;
+    pub fn GeoIP_name_by_ipnum_v6_gl(
+        db: RawGeoIp,
+        ipnum: In6Addr,
+        gl: *mut GeoIpLookup,
+    ) -> *const c_char;
     pub fn GeoIP_record_by_ipnum(db: RawGeoIp, ipnum: c_ulong) -> *const GeoIpRecord;
     pub fn GeoIP_record_by_ipnum_v6(db: RawGeoIp, ipnum: In6Addr) -> *const GeoIpRecord;
     pub fn GeoIPRecord_delete(gir: *const GeoIpRecord);
     pub fn GeoIP_set_charset(db: RawGeoIp, charset: c_int) -> c_int;
-    pub fn GeoIP_region_name_by_code(country_code: *const c_char, region_code: *const c_char) -> *const c_char;
-    pub fn GeoIP_time_zone_by_country_and_region(country_code: *const c_char, region_code: *const c_char) -> *const c_char;
+    pub fn GeoIP_region_name_by_code(
+        country_code: *const c_char,
+        region_code: *const c_char,
+    ) -> *const c_char;
+    pub fn GeoIP_time_zone_by_country_and_region(
+        country_code: *const c_char,
+        region_code: *const c_char,
+    ) -> *const c_char;
 }
 
 #[repr(C)]
@@ -55,5 +67,5 @@ pub struct GeoIpRecord {
     pub area_code: c_int,
     pub charset: c_int,
     pub continent_code: *const c_char,
-    pub netmask: c_int
+    pub netmask: c_int,
 }

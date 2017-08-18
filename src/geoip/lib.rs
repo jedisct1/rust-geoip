@@ -151,28 +151,34 @@ impl CNetworkIp {
         match ip {
             IpAddr::V4(addr) => {
                 let b = addr.octets();
-                CNetworkIp::V4(((b[0] as c_ulong) << 24) | ((b[1] as c_ulong) << 16) |
-                               ((b[2] as c_ulong) << 8) |
-                               ((b[3] as c_ulong)))
+                CNetworkIp::V4(
+                    ((b[0] as c_ulong) << 24) | ((b[1] as c_ulong) << 16) |
+                        ((b[2] as c_ulong) << 8) |
+                        ((b[3] as c_ulong)),
+                )
             }
             IpAddr::V6(addr) => {
                 let b = addr.segments();
-                CNetworkIp::V6([(b[0] >> 8) as u8,
-                                b[0] as u8,
-                                (b[1] >> 8) as u8,
-                                b[1] as u8,
-                                (b[2] >> 8) as u8,
-                                b[2] as u8,
-                                (b[3] >> 8) as u8,
-                                b[3] as u8,
-                                (b[4] >> 8) as u8,
-                                b[4] as u8,
-                                (b[5] >> 8) as u8,
-                                b[5] as u8,
-                                (b[6] >> 8) as u8,
-                                b[6] as u8,
-                                (b[7] >> 8) as u8,
-                                b[7] as u8])
+                CNetworkIp::V6(
+                    [
+                        (b[0] >> 8) as u8,
+                        b[0] as u8,
+                        (b[1] >> 8) as u8,
+                        b[1] as u8,
+                        (b[2] >> 8) as u8,
+                        b[2] as u8,
+                        (b[3] >> 8) as u8,
+                        b[3] as u8,
+                        (b[4] >> 8) as u8,
+                        b[4] as u8,
+                        (b[5] >> 8) as u8,
+                        b[5] as u8,
+                        (b[6] >> 8) as u8,
+                        b[6] as u8,
+                        (b[7] >> 8) as u8,
+                        b[7] as u8,
+                    ],
+                )
             }
         }
     }
@@ -276,8 +282,10 @@ impl Error for ReadInfoError {
 impl GeoIp {
     pub fn open(path: &Path, options: Options) -> Result<GeoIp, OpenPathError> {
         let db = unsafe {
-            geoip_sys::GeoIP_open(try!(ffi::CString::new(path.as_os_str().as_bytes())).as_ptr(),
-                                  options as c_int)
+            geoip_sys::GeoIP_open(
+                try!(ffi::CString::new(path.as_os_str().as_bytes())).as_ptr(),
+                options as c_int,
+            )
         };
         if db.is_null() {
             return Err(OpenPathError::OpenFailed(path.to_owned()));
@@ -343,38 +351,38 @@ impl GeoIp {
 
     pub fn region_name_by_code(country_code: &str, region_code: &str) -> Option<&'static str> {
         unsafe {
-            let cstr = geoip_sys::GeoIP_region_name_by_code(ffi::CString::new(country_code)
-                                                                .unwrap()
-                                                                .as_ptr(),
-                                                            ffi::CString::new(region_code)
-                                                                .unwrap()
-                                                                .as_ptr());
+            let cstr = geoip_sys::GeoIP_region_name_by_code(
+                ffi::CString::new(country_code).unwrap().as_ptr(),
+                ffi::CString::new(region_code).unwrap().as_ptr(),
+            );
 
             if cstr.is_null() {
                 return None;
             }
 
-            Some(ffi::CStr::from_ptr(cstr).to_str().expect("invalid region name data"))
+            Some(ffi::CStr::from_ptr(cstr).to_str().expect(
+                "invalid region name data",
+            ))
         }
     }
 
-    pub fn time_zone_by_country_and_region(country_code: &str,
-                                           region_code: &str)
-                                           -> Option<&'static str> {
+    pub fn time_zone_by_country_and_region(
+        country_code: &str,
+        region_code: &str,
+    ) -> Option<&'static str> {
         unsafe {
-            let cstr =
-                geoip_sys::GeoIP_time_zone_by_country_and_region(ffi::CString::new(country_code)
-                                                                     .unwrap()
-                                                                     .as_ptr(),
-                                                                 ffi::CString::new(region_code)
-                                                                     .unwrap()
-                                                                     .as_ptr());
+            let cstr = geoip_sys::GeoIP_time_zone_by_country_and_region(
+                ffi::CString::new(country_code).unwrap().as_ptr(),
+                ffi::CString::new(region_code).unwrap().as_ptr(),
+            );
 
             if cstr.is_null() {
                 return None;
             }
 
-            Some(ffi::CStr::from_ptr(cstr).to_str().expect("invalid time zone data"))
+            Some(ffi::CStr::from_ptr(cstr).to_str().expect(
+                "invalid time zone data",
+            ))
         }
     }
 
@@ -403,7 +411,12 @@ impl GeoIp {
                 if !asn.starts_with("AS") {
                     return None;
                 } else {
-                    asn[2..].splitn(2, ' ').next().unwrap().parse::<u32>().unwrap()
+                    asn[2..]
+                        .splitn(2, ' ')
+                        .next()
+                        .unwrap()
+                        .parse::<u32>()
+                        .unwrap()
                 }
             }
         };
@@ -427,17 +440,16 @@ impl Drop for GeoIp {
 
 impl Debug for GeoIp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("GeoIp")
-            .field("info", &self.info())
-            .finish()
+        f.debug_struct("GeoIp").field("info", &self.info()).finish()
     }
 }
 
 #[test]
 fn geoip_test_basic() {
-    let geoip = GeoIp::open(&Path::new("/opt/geoip/GeoIPASNum.dat"),
-                            Options::MemoryCache)
-        .unwrap();
+    let geoip = GeoIp::open(
+        &Path::new("/opt/geoip/GeoIPASNum.dat"),
+        Options::MemoryCache,
+    ).unwrap();
 
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.as_info_by_ip(ip).unwrap();
@@ -448,9 +460,10 @@ fn geoip_test_basic() {
 
 #[test]
 fn geoip_test_city() {
-    let geoip = GeoIp::open(&Path::new("/opt/geoip/GeoLiteCity.dat"),
-                            Options::MemoryCache)
-        .unwrap();
+    let geoip = GeoIp::open(
+        &Path::new("/opt/geoip/GeoLiteCity.dat"),
+        Options::MemoryCache,
+    ).unwrap();
 
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.city_info_by_ip(ip).unwrap();
@@ -461,15 +474,18 @@ fn geoip_test_city() {
 fn geoip_test_city_open_fail() {
     let geoip = GeoIp::open(&Path::new("foobar.baz"), Options::MemoryCache);
 
-    assert_eq!("Failed to open database from path 'foobar.baz'",
-               &format!("{}", geoip.unwrap_err()));
+    assert_eq!(
+        "Failed to open database from path 'foobar.baz'",
+        &format!("{}", geoip.unwrap_err())
+    );
 }
 
 #[test]
 fn geoip_test_city_maybe_code() {
-    let geoip = GeoIp::open(&Path::new("/opt/geoip/GeoLiteCity.dat"),
-                            Options::MemoryCache)
-        .unwrap();
+    let geoip = GeoIp::open(
+        &Path::new("/opt/geoip/GeoLiteCity.dat"),
+        Options::MemoryCache,
+    ).unwrap();
 
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.city_info_by_ip(ip).unwrap();
@@ -507,8 +523,10 @@ fn geoip_region_name_by_code() {
 #[test]
 fn geoip_time_zone_by_country_and_region() {
     assert_eq!(GeoIp::time_zone_by_country_and_region("foo", "bar"), None);
-    assert_eq!(GeoIp::time_zone_by_country_and_region("US", "CA"),
-               Some("America/Los_Angeles"));
+    assert_eq!(
+        GeoIp::time_zone_by_country_and_region("US", "CA"),
+        Some("America/Los_Angeles")
+    );
 }
 
 #[test]
