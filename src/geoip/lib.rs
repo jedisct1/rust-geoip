@@ -1,15 +1,12 @@
 #![crate_name = "geoip"]
 #![crate_type = "rlib"]
+#![warn(non_camel_case_types, non_upper_case_globals, unused_qualifications)]
 
-#![warn(non_camel_case_types,
-        non_upper_case_globals,
-        unused_qualifications)]
-
-extern crate libc;
-extern crate rustc_serialize;
 extern crate geoip_sys;
 #[macro_use]
 extern crate lazy_static;
+extern crate libc;
+extern crate rustc_serialize;
 
 use libc::{c_char, c_int, c_ulong, c_void};
 use std::os::unix::ffi::OsStrExt;
@@ -119,7 +116,11 @@ fn maybe_string(c_str: *const c_char) -> Option<String> {
 }
 
 fn maybe_code(code: u32) -> Option<u32> {
-    if code == 0 { None } else { Some(code) }
+    if code == 0 {
+        None
+    } else {
+        Some(code)
+    }
 }
 
 impl CityInfo {
@@ -153,32 +154,29 @@ impl CNetworkIp {
                 let b = addr.octets();
                 CNetworkIp::V4(
                     ((b[0] as c_ulong) << 24) | ((b[1] as c_ulong) << 16) |
-                        ((b[2] as c_ulong) << 8) |
-                        ((b[3] as c_ulong)),
+                        ((b[2] as c_ulong) << 8) | ((b[3] as c_ulong)),
                 )
             }
             IpAddr::V6(addr) => {
                 let b = addr.segments();
-                CNetworkIp::V6(
-                    [
-                        (b[0] >> 8) as u8,
-                        b[0] as u8,
-                        (b[1] >> 8) as u8,
-                        b[1] as u8,
-                        (b[2] >> 8) as u8,
-                        b[2] as u8,
-                        (b[3] >> 8) as u8,
-                        b[3] as u8,
-                        (b[4] >> 8) as u8,
-                        b[4] as u8,
-                        (b[5] >> 8) as u8,
-                        b[5] as u8,
-                        (b[6] >> 8) as u8,
-                        b[6] as u8,
-                        (b[7] >> 8) as u8,
-                        b[7] as u8,
-                    ],
-                )
+                CNetworkIp::V6([
+                    (b[0] >> 8) as u8,
+                    b[0] as u8,
+                    (b[1] >> 8) as u8,
+                    b[1] as u8,
+                    (b[2] >> 8) as u8,
+                    b[2] as u8,
+                    (b[3] >> 8) as u8,
+                    b[3] as u8,
+                    (b[4] >> 8) as u8,
+                    b[4] as u8,
+                    (b[5] >> 8) as u8,
+                    b[5] as u8,
+                    (b[6] >> 8) as u8,
+                    b[6] as u8,
+                    (b[7] >> 8) as u8,
+                    b[7] as u8,
+                ])
             }
         }
     }
@@ -360,9 +358,11 @@ impl GeoIp {
                 return None;
             }
 
-            Some(ffi::CStr::from_ptr(cstr).to_str().expect(
-                "invalid region name data",
-            ))
+            Some(
+                ffi::CStr::from_ptr(cstr)
+                    .to_str()
+                    .expect("invalid region name data"),
+            )
         }
     }
 
@@ -380,9 +380,11 @@ impl GeoIp {
                 return None;
             }
 
-            Some(ffi::CStr::from_ptr(cstr).to_str().expect(
-                "invalid time zone data",
-            ))
+            Some(
+                ffi::CStr::from_ptr(cstr)
+                    .to_str()
+                    .expect("invalid time zone data"),
+            )
         }
     }
 
@@ -407,18 +409,16 @@ impl GeoIp {
         let mut di = description.splitn(2, ' ');
         let asn = match di.next() {
             None => return None,
-            Some(asn) => {
-                if !asn.starts_with("AS") {
-                    return None;
-                } else {
-                    asn[2..]
-                        .splitn(2, ' ')
-                        .next()
-                        .unwrap()
-                        .parse::<u32>()
-                        .unwrap()
-                }
-            }
+            Some(asn) => if !asn.starts_with("AS") {
+                return None;
+            } else {
+                asn[2..]
+                    .splitn(2, ' ')
+                    .next()
+                    .unwrap()
+                    .parse::<u32>()
+                    .unwrap()
+            },
         };
         let name = di.next().unwrap_or("(none)");
         let as_info = ASInfo {
