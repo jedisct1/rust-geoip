@@ -153,8 +153,8 @@ impl CNetworkIp {
             IpAddr::V4(addr) => {
                 let b = addr.octets();
                 CNetworkIp::V4(
-                    ((b[0] as c_ulong) << 24) | ((b[1] as c_ulong) << 16) |
-                        ((b[2] as c_ulong) << 8) | ((b[3] as c_ulong)),
+                    ((b[0] as c_ulong) << 24) | ((b[1] as c_ulong) << 16) | ((b[2] as c_ulong) << 8)
+                        | ((b[3] as c_ulong)),
                 )
             }
             IpAddr::V6(addr) => {
