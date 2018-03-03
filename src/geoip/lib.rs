@@ -332,9 +332,7 @@ impl GeoIp {
     pub fn city_info_by_ip(&self, ip: IpAddr) -> Option<CityInfo> {
         let cres = match CNetworkIp::new(ip) {
             CNetworkIp::V4(ip) => unsafe { geoip_sys::GeoIP_record_by_ipnum(self.db, ip) },
-            CNetworkIp::V6(ip) => unsafe {
-                geoip_sys::GeoIP_record_by_ipnum_v6(self.db, ip)
-            },
+            CNetworkIp::V6(ip) => unsafe { geoip_sys::GeoIP_record_by_ipnum_v6(self.db, ip) },
         };
 
         if cres.is_null() {
