@@ -1,11 +1,8 @@
-
-#![warn(non_camel_case_types,
-        non_upper_case_globals,
-        unused_qualifications)]
+#![warn(non_camel_case_types, non_upper_case_globals, unused_qualifications)]
 
 extern crate libc;
 
-use libc::{c_void, c_char, c_int, c_ulong, c_float};
+use libc::{c_char, c_float, c_int, c_ulong, c_void};
 
 pub type RawGeoIp = *const c_void;
 pub type In6Addr = [u8; 16];
@@ -16,9 +13,15 @@ pub struct GeoIpLookup {
     pub netmask: c_int,
 }
 
+impl Default for GeoIpLookup {
+    fn default() -> GeoIpLookup {
+        GeoIpLookup { netmask: 0 }
+    }
+}
+
 impl GeoIpLookup {
     pub fn new() -> GeoIpLookup {
-        GeoIpLookup { netmask: 0 }
+        GeoIpLookup::default()
     }
 }
 
