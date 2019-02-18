@@ -9,14 +9,14 @@ extern crate libc;
 extern crate rustc_serialize;
 
 use libc::{c_char, c_int, c_ulong, c_void};
-use std::os::unix::ffi::OsStrExt;
+use std::error::Error;
 use std::ffi;
+use std::fmt::{self, Debug};
 use std::net::{Ipv4Addr, Ipv6Addr};
+use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 use std::str::Utf8Error;
-use std::error::Error;
 use std::sync::Mutex;
-use std::fmt::{self, Debug};
 
 lazy_static! {
     static ref LOCK: Mutex<()> = Mutex::new(());
@@ -153,8 +153,10 @@ impl CNetworkIp {
             IpAddr::V4(addr) => {
                 let b = addr.octets();
                 CNetworkIp::V4(
-                    ((b[0] as c_ulong) << 24) | ((b[1] as c_ulong) << 16) | ((b[2] as c_ulong) << 8)
-                        | ((b[3] as c_ulong)),
+                    ((b[0] as c_ulong) << 24)
+                        | ((b[1] as c_ulong) << 16)
+                        | ((b[2] as c_ulong) << 8)
+                        | (b[3] as c_ulong),
                 )
             }
             IpAddr::V6(addr) => {
@@ -291,7 +293,7 @@ impl GeoIp {
         if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::Utf8 as c_int) } != 0 {
             return Err(OpenPathError::SetCharsetFailed(Charset::Utf8));
         }
-        Ok(GeoIp { db: db })
+        Ok(GeoIp { db })
     }
 
     pub fn open_type(db_type: DBType, options: Options) -> Result<GeoIp, OpenTypeError> {
@@ -306,7 +308,7 @@ impl GeoIp {
         if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::Utf8 as c_int) } != 0 {
             return Err(OpenTypeError::SetCharsetFailed(Charset::Utf8));
         }
-        Ok(GeoIp { db: db })
+        Ok(GeoIp { db })
     }
 
     pub fn info(&self) -> Result<String, ReadInfoError> {
@@ -409,20 +411,22 @@ impl GeoIp {
         let mut di = description.splitn(2, ' ');
         let asn = match di.next() {
             None => return None,
-            Some(asn) => if !asn.starts_with("AS") {
-                return None;
-            } else {
-                asn[2..]
-                    .splitn(2, ' ')
-                    .next()
-                    .unwrap()
-                    .parse::<u32>()
-                    .unwrap()
-            },
+            Some(asn) => {
+                if !asn.starts_with("AS") {
+                    return None;
+                } else {
+                    asn[2..]
+                        .splitn(2, ' ')
+                        .next()
+                        .unwrap()
+                        .parse::<u32>()
+                        .unwrap()
+                }
+            }
         };
         let name = di.next().unwrap_or("(none)");
         let as_info = ASInfo {
-            asn: asn,
+            asn,
             name: name.to_string(),
             netmask: gl.netmask as u32,
         };
@@ -449,7 +453,8 @@ fn geoip_test_basic() {
     let geoip = GeoIp::open(
         &Path::new("/opt/geoip/GeoIPASNum.dat"),
         Options::MemoryCache,
-    ).unwrap();
+    )
+    .unwrap();
 
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.as_info_by_ip(ip).unwrap();
@@ -463,7 +468,8 @@ fn geoip_test_city() {
     let geoip = GeoIp::open(
         &Path::new("/opt/geoip/GeoLiteCity.dat"),
         Options::MemoryCache,
-    ).unwrap();
+    )
+    .unwrap();
 
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.city_info_by_ip(ip).unwrap();
@@ -485,7 +491,8 @@ fn geoip_test_city_maybe_code() {
     let geoip = GeoIp::open(
         &Path::new("/opt/geoip/GeoLiteCity.dat"),
         Options::MemoryCache,
-    ).unwrap();
+    )
+    .unwrap();
 
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.city_info_by_ip(ip).unwrap();
@@ -537,20 +544,23 @@ fn geoip_test_city_type_race() {
 
     let barrier = Arc::new(Barrier::new(N));
 
-    (0..N).map(|_| {
-        let c = barrier.clone();
-        thread::spawn(move|| {
-            // hopefully this will exercise a race condition
-            c.wait();
-            let geoip = GeoIp::open_type(DBType::CityEditionRev1, Options::MemoryCache).unwrap();
-            let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
-            let res = geoip.city_info_by_ip(ip).unwrap();
-            assert_eq!(res.city.as_ref().map(String::as_str), Some("Mountain View"));
+    (0..N)
+        .map(|_| {
+            let c = barrier.clone();
+            thread::spawn(move || {
+                // hopefully this will exercise a race condition
+                c.wait();
+                let geoip =
+                    GeoIp::open_type(DBType::CityEditionRev1, Options::MemoryCache).unwrap();
+                let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
+                let res = geoip.city_info_by_ip(ip).unwrap();
+                assert_eq!(res.city.as_ref().map(String::as_str), Some("Mountain View"));
+            })
         })
-    })
-    .collect::<Vec<_>>()                // spawn all treads
-    .into_iter().map(|t| t.join())      // wait for treads to finish and get their results
-    .collect::<Result<Vec<_>, _>>()     // will be Err(Any) if one of the Result was Err
-    .map_err(|any| any.downcast_ref::<String>().unwrap().to_owned())
-    .expect("one of the threads failed");
+        .collect::<Vec<_>>() // spawn all treads
+        .into_iter()
+        .map(|t| t.join()) // wait for treads to finish and get their results
+        .collect::<Result<Vec<_>, _>>() // will be Err(Any) if one of the Result was Err
+        .map_err(|any| any.downcast_ref::<String>().unwrap().to_owned())
+        .expect("one of the threads failed");
 }
