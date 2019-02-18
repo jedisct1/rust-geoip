@@ -283,7 +283,7 @@ impl GeoIp {
     pub fn open(path: &Path, options: Options) -> Result<GeoIp, OpenPathError> {
         let db = unsafe {
             geoip_sys::GeoIP_open(
-                try!(ffi::CString::new(path.as_os_str().as_bytes())).as_ptr(),
+                ffi::CString::new(path.as_os_str().as_bytes())?.as_ptr(),
                 options as c_int,
             )
         };
