@@ -2,11 +2,10 @@
 #![crate_type = "rlib"]
 #![warn(non_camel_case_types, non_upper_case_globals, unused_qualifications)]
 
-extern crate geoip_sys;
+use geoip_sys;
 #[macro_use]
 extern crate lazy_static;
-extern crate libc;
-extern crate rustc_serialize;
+use libc;
 
 use libc::{c_char, c_int, c_ulong, c_void};
 use std::error::Error;
@@ -198,7 +197,7 @@ impl From<ffi::NulError> for OpenPathError {
 }
 
 impl fmt::Display for OpenPathError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             OpenPathError::InvalidPath(ref e) => write!(f, "Given path was invalid: {}", e),
             OpenPathError::OpenFailed(ref path) => {
@@ -228,7 +227,7 @@ pub enum OpenTypeError {
 }
 
 impl fmt::Display for OpenTypeError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             OpenTypeError::OpenFailed(ref t) => {
                 write!(f, "Failed to open database of type {:?}", t)
@@ -262,7 +261,7 @@ impl From<Utf8Error> for ReadInfoError {
 }
 
 impl fmt::Display for ReadInfoError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             ReadInfoError::InfoFailed => write!(f, "Failed to get database info"),
             ReadInfoError::InvalidData(ref err) => write!(f, "Invalid info data: {}", err),
@@ -443,7 +442,7 @@ impl Drop for GeoIp {
 }
 
 impl Debug for GeoIp {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("GeoIp").field("info", &self.info()).finish()
     }
 }
