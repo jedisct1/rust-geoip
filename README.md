@@ -4,6 +4,7 @@ rust-geoip
 [GeoIP](http://www.maxmind.com/en/geolocation_landing) bindings for Rust.
 
 Currently only supports:
+* GeoLite Country Legacy Database
 * [Autonomous System Numbers Legacy Database](http://dev.maxmind.com/geoip/legacy/geolite/#Autonomous_System_Numbers)
 * [GeoIP Legacy City Database](http://dev.maxmind.com/geoip/legacy/install/city/)
 

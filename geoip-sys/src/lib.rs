@@ -31,6 +31,16 @@ extern "C" {
     pub fn GeoIP_open_type(db_type: c_int, flags: c_int) -> RawGeoIp;
     pub fn GeoIP_delete(db: RawGeoIp);
     pub fn GeoIP_database_info(db: RawGeoIp) -> *mut c_char;
+    pub fn GeoIP_country_code_by_ipnum_gl(
+        db: RawGeoIp,
+        ipnum: c_ulong,
+        gl: *mut GeoIpLookup
+    ) -> *const c_char;
+    pub fn GeoIP_country_code_by_ipnum_v6_gl(
+        db: RawGeoIp,
+        ipnum: In6Addr,
+        gl: *mut GeoIpLookup
+    ) -> *const c_char;
     pub fn GeoIP_name_by_ipnum_gl(
         db: RawGeoIp,
         ipnum: c_ulong,

@@ -330,6 +330,21 @@ impl GeoIp {
         }
     }
 
+    /// Get ISO 3166 two-character country code for IP.
+    pub fn country_code_by_ip(&self, ip: IpAddr) -> Option<String> {
+        let mut gl = geoip_sys::GeoIpLookup::new();
+        let cres = match CNetworkIp::new(ip) {
+            CNetworkIp::V4(ip) => unsafe {
+                geoip_sys::GeoIP_country_code_by_ipnum_gl(self.db, ip, &mut gl)
+            },
+            CNetworkIp::V6(ip) => unsafe {
+                geoip_sys::GeoIP_country_code_by_ipnum_v6_gl(self.db, ip, &mut gl)
+            },
+        };
+
+        maybe_string(cres)
+    }
+
     pub fn city_info_by_ip(&self, ip: IpAddr) -> Option<CityInfo> {
         let cres = match CNetworkIp::new(ip) {
             CNetworkIp::V4(ip) => unsafe { geoip_sys::GeoIP_record_by_ipnum(self.db, ip) },
@@ -460,6 +475,17 @@ fn geoip_test_basic() {
     assert_eq!(res.asn, 15169);
     assert_eq!(res.name, "Google Inc.".to_string());
     assert_eq!(res.netmask, 24);
+}
+
+#[test]
+fn geoip_test_country() {
+    let geoip = GeoIp::open_type(DBType::CountryEdition, Options::Standard).unwrap();
+
+    let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
+    let res = geoip.country_code_by_ip(ip).unwrap();
+    assert_eq!(res, "US".to_string());
+    let ip = IpAddr::V4("127.0.0.1".parse().unwrap());
+    assert_eq!(geoip.country_code_by_ip(ip), None);
 }
 
 #[test]
