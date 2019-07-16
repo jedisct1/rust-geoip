@@ -342,6 +342,25 @@ impl GeoIp {
         }
     }
 
+    pub fn city_info_by_name(&self, name: &str) -> Option<CityInfo> {
+        let name = name.as_ptr() as *const _;
+        let cres_v4 = unsafe { geoip_sys::GeoIP_record_by_name(self.db, name) };
+        let cres_v6 = unsafe { geoip_sys::GeoIP_record_by_name_v6(self.db, name) };
+
+        let cres = if cres_v6.is_null() { cres_v4 } else { cres_v6 };
+
+        if cres.is_null() {
+            return None;
+        }
+
+        unsafe {
+            let city_info = CityInfo::from_geoiprecord(&*cres);
+            geoip_sys::GeoIPRecord_delete(cres);
+            std::mem::forget(cres);
+            Some(city_info)
+        }
+    }
+
     pub fn region_name_by_code(country_code: &str, region_code: &str) -> Option<&'static str> {
         unsafe {
             let cstr = geoip_sys::GeoIP_region_name_by_code(

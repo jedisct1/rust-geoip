@@ -43,6 +43,8 @@ extern "C" {
     ) -> *const c_char;
     pub fn GeoIP_record_by_ipnum(db: RawGeoIp, ipnum: c_ulong) -> *const GeoIpRecord;
     pub fn GeoIP_record_by_ipnum_v6(db: RawGeoIp, ipnum: In6Addr) -> *const GeoIpRecord;
+    pub fn GeoIP_record_by_name(db: RawGeoIp, name: *const c_char) -> *const GeoIpRecord;
+    pub fn GeoIP_record_by_name_v6(db: RawGeoIp, name: *const c_char) -> *const GeoIpRecord;
     pub fn GeoIPRecord_delete(gir: *const GeoIpRecord);
     pub fn GeoIP_set_charset(db: RawGeoIp, charset: c_int) -> c_int;
     pub fn GeoIP_region_name_by_code(
