@@ -1,4 +1,4 @@
-[project]
+[package]
 name = "geoip"
 version = "0.0.13"
 authors = ["Frank Denis <github@pureftpd.org>"]
@@ -15,5 +15,5 @@ path = "src/geoip/lib.rs"
 [dependencies]
 geoip-sys = "0.0.13"
 rustc-serialize = "0.3"
-libc = "0.2.48"
-lazy_static = "1.2"
+libc = "0.2"
+lazy_static = "1"

@@ -1,7 +1,5 @@
 #![warn(non_camel_case_types, non_upper_case_globals, unused_qualifications)]
 
-extern crate libc;
-
 use libc::{c_char, c_float, c_int, c_ulong, c_void};
 
 pub type RawGeoIp = *const c_void;

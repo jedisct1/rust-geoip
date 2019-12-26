@@ -6,6 +6,7 @@ description = "Low-level bindings for the GeoIP library"
 license = "ISC"
 homepage = "https://github.com/jedisct1/rust-geoip"
 repository = "https://github.com/jedisct1/rust-geoip"
+edition = "2018"
 
 [dependencies]
-libc = "0.2.48"
+libc = "0.2"
