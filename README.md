@@ -1,6 +1,14 @@
 rust-geoip
 ==========
 
+This project is no longer maintained, as MaxMind are phasing out libgeoip and the original database format.
+
+Please switch to libgeoip2, maxminddb and the [maxminddb crate](https://crates.io/crates/maxminddb).
+
+Original documentation follows:
+
+~~~
+
 [GeoIP](http://www.maxmind.com/en/geolocation_landing) bindings for Rust.
 
 Currently only supports:
