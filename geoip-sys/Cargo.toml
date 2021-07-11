@@ -1,6 +1,6 @@
 [package]
 name = "geoip-sys"
-version = "0.0.13"
+version = "0.0.14"
 authors = ["Frank Denis <github@pureftpd.org>"]
 description = "Low-level bindings for the GeoIP library"
 license = "ISC"

@@ -1,6 +1,6 @@
 [package]
 name = "geoip"
-version = "0.0.13"
+version = "0.0.14"
 authors = ["Frank Denis <github@pureftpd.org>"]
 description = "Bindings for the GeoIP library"
 license = "ISC"
@@ -13,7 +13,7 @@ name = "geoip"
 path = "src/geoip/lib.rs"
 
 [dependencies]
-geoip-sys = "0.0.13"
+geoip-sys = "0.0.14"
 rustc-serialize = "0.3"
 libc = "0.2"
 lazy_static = "1"
