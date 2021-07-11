@@ -7,8 +7,6 @@ Please switch to libgeoip2, maxminddb and the [maxminddb crate](https://crates.i
 
 Original documentation follows:
 
-~~~
-
 [GeoIP](http://www.maxmind.com/en/geolocation_landing) bindings for Rust.
 
 Currently only supports:
