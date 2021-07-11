@@ -2,10 +2,10 @@
 #![crate_type = "rlib"]
 #![warn(non_camel_case_types, non_upper_case_globals, unused_qualifications)]
 
-use geoip_sys;
+
 #[macro_use]
 extern crate lazy_static;
-use libc;
+
 
 use libc::{c_char, c_int, c_ulong, c_void};
 use std::error::Error;
@@ -450,7 +450,7 @@ impl Debug for GeoIp {
 #[test]
 fn geoip_test_basic() {
     let geoip = GeoIp::open(
-        &Path::new("/opt/geoip/GeoIPASNum.dat"),
+        Path::new("/tmp/GeoLite2-ASN.mmdb"),
         Options::MemoryCache,
     )
     .unwrap();
@@ -465,7 +465,7 @@ fn geoip_test_basic() {
 #[test]
 fn geoip_test_city() {
     let geoip = GeoIp::open(
-        &Path::new("/opt/geoip/GeoLiteCity.dat"),
+        Path::new("/tmp/GeoLite2-City.mmdb"),
         Options::MemoryCache,
     )
     .unwrap();
@@ -477,7 +477,7 @@ fn geoip_test_city() {
 
 #[test]
 fn geoip_test_city_open_fail() {
-    let geoip = GeoIp::open(&Path::new("foobar.baz"), Options::MemoryCache);
+    let geoip = GeoIp::open(Path::new("foobar.baz"), Options::MemoryCache);
 
     assert_eq!(
         "Failed to open database from path 'foobar.baz'",
@@ -488,7 +488,7 @@ fn geoip_test_city_open_fail() {
 #[test]
 fn geoip_test_city_maybe_code() {
     let geoip = GeoIp::open(
-        &Path::new("/opt/geoip/GeoLiteCity.dat"),
+        Path::new("/tmp/GeoLite2-City.mmdb"),
         Options::MemoryCache,
     )
     .unwrap();
@@ -553,7 +553,7 @@ fn geoip_test_city_type_race() {
                     GeoIp::open_type(DBType::CityEditionRev1, Options::MemoryCache).unwrap();
                 let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
                 let res = geoip.city_info_by_ip(ip).unwrap();
-                assert_eq!(res.city.as_ref().map(String::as_str), Some("Mountain View"));
+                assert_eq!(res.city.as_deref(), Some("Mountain View"));
             })
         })
         .collect::<Vec<_>>() // spawn all treads
